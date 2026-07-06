@@ -1,0 +1,338 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="Send_Escalation_Digest" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:sd="clr-namespace:System.Data;assembly=System.Data.Common" xmlns:njl="clr-namespace:Newtonsoft.Json.Linq;assembly=Newtonsoft.Json" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uga="clr-namespace:UiPath.GSuite.Activities;assembly=UiPath.GSuite.Activities" xmlns:ugae="clr-namespace:UiPath.GSuite.Activities.Enums;assembly=UiPath.GSuite.Activities" xmlns:ugage="clr-namespace:UiPath.GSuite.Activities.Gmail.Enums;assembly=UiPath.GSuite.Activities" xmlns:ugagm="clr-namespace:UiPath.GSuite.Activities.Gmail.Models;assembly=UiPath.GSuite.Activities" xmlns:ugm="clr-namespace:UiPath.GSuite.Models;assembly=UiPath.GSuite" xmlns:upr="clr-namespace:UiPath.Platform.ResourceHandling;assembly=UiPath.Platform" xmlns:usau="clr-namespace:UiPath.Shared.Activities.Utils;assembly=UiPath.GSuite.Activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_SupervisorEmail" Type="InArgument(x:String)" />
+    <x:Property Name="out_DigestSent" Type="OutArgument(x:Boolean)" />
+  </x:Members>
+  <VisualBasic.Settings>
+    <x:Null />
+  </VisualBasic.Settings>
+  <TextExpression.NamespacesForImplementation>
+    <sco:Collection x:TypeArguments="x:String">
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Activities.Expressions</x:String>
+      <x:String>System.Activities.Validation</x:String>
+      <x:String>System.Activities.XamlIntegration</x:String>
+      <x:String>Microsoft.VisualBasic</x:String>
+      <x:String>Microsoft.VisualBasic.Activities</x:String>
+      <x:String>System</x:String>
+      <x:String>System.Collections</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Collections.ObjectModel</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Diagnostics</x:String>
+      <x:String>System.Drawing</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Net.Mail</x:String>
+      <x:String>System.Text.RegularExpressions</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>System.Xml.Linq</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+      <x:String>System.Windows.Markup</x:String>
+      <x:String>GlobalVariablesNamespace</x:String>
+      <x:String>GlobalConstantsNamespace</x:String>
+      <x:String>System.Runtime.Serialization</x:String>
+      <x:String>Newtonsoft.Json</x:String>
+      <x:String>Newtonsoft.Json.Linq</x:String>
+      <x:String>UiPath.UIAutomationNext.Enums</x:String>
+      <x:String>UiPath.UIAutomationCore.Contracts</x:String>
+      <x:String>UiPath.UIAutomationNext.Models</x:String>
+      <x:String>UiPath.UIAutomationNext.Activities</x:String>
+      <x:String>UiPath.Shared.Activities</x:String>
+      <x:String>UiPath.Platform.ObjectLibrary</x:String>
+      <x:String>UiPath.Platform.SyncObjects</x:String>
+      <x:String>System.ComponentModel</x:String>
+      <x:String>System.Xml.Serialization</x:String>
+      <x:String>UiPath.Excel</x:String>
+      <x:String>UiPath.Platform.ResourceHandling</x:String>
+      <x:String>UiPath.Excel.Activities</x:String>
+      <x:String>System.Linq.Expressions</x:String>
+      <x:String>UiPath.WebAPI.Activities</x:String>
+      <x:String>UiPath.GSuite.Activities.Gmail.Models</x:String>
+      <x:String>UiPath.GSuite.Activities.Enums</x:String>
+      <x:String>UiPath.Shared.Activities.Utils</x:String>
+      <x:String>UiPath.GSuite.Activities.Gmail.Filters</x:String>
+      <x:String>UiPath.GSuite.Activities.Filters</x:String>
+      <x:String>UiPath.GSuite.Gmail.Enums</x:String>
+      <x:String>UiPath.GSuite.Models</x:String>
+      <x:String>UiPath.GSuite.Activities.Gmail.Enums</x:String>
+      <x:String>UiPath.GSuite.Activities</x:String>
+      <x:String>UiPath.Shared.Activities.ConnectionService.Contracts</x:String>
+      <x:String>UiPath.Shared.Activities.Business</x:String>
+      <x:String>UiPath.Platform</x:String>
+      <x:String>UiPath.GSuite</x:String>
+    </sco:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <sco:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>Microsoft.VisualBasic</AssemblyReference>
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>PresentationCore</AssemblyReference>
+      <AssemblyReference>PresentationFramework</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
+      <AssemblyReference>System.Core</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System.Data.Common</AssemblyReference>
+      <AssemblyReference>System.Data.DataSetExtensions</AssemblyReference>
+      <AssemblyReference>System.Drawing</AssemblyReference>
+      <AssemblyReference>System.Drawing.Common</AssemblyReference>
+      <AssemblyReference>System.Drawing.Primitives</AssemblyReference>
+      <AssemblyReference>System.Linq</AssemblyReference>
+      <AssemblyReference>System.Net.Mail</AssemblyReference>
+      <AssemblyReference>System.ObjectModel</AssemblyReference>
+      <AssemblyReference>System.Private.CoreLib</AssemblyReference>
+      <AssemblyReference>System.Xaml</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>System.Xml.Linq</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UiAutomation.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.WebAPI.Activities</AssemblyReference>
+      <AssemblyReference>Newtonsoft.Json</AssemblyReference>
+      <AssemblyReference>WindowsBase</AssemblyReference>
+      <AssemblyReference>UiPath.Studio.Constants</AssemblyReference>
+      <AssemblyReference>System.Private.ServiceModel</AssemblyReference>
+      <AssemblyReference>System.Private.DataContractSerialization</AssemblyReference>
+      <AssemblyReference>System.Runtime.Serialization.Formatters</AssemblyReference>
+      <AssemblyReference>System.Runtime.Serialization.Primitives</AssemblyReference>
+      <AssemblyReference>UiPath.UIAutomationNext</AssemblyReference>
+      <AssemblyReference>UiPath.UIAutomationCore</AssemblyReference>
+      <AssemblyReference>UiPath.UIAutomationNext.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.OCR.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.Platform</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.EventBasedAsync</AssemblyReference>
+      <AssemblyReference>System.ComponentModel</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.Primitives</AssemblyReference>
+      <AssemblyReference>System.Private.Xml</AssemblyReference>
+      <AssemblyReference>UiPath.Excel</AssemblyReference>
+      <AssemblyReference>UiPath.Excel.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.Excel.Activities.Design</AssemblyReference>
+      <AssemblyReference>System.Console</AssemblyReference>
+      <AssemblyReference>System.Security.Permissions</AssemblyReference>
+      <AssemblyReference>System.Configuration.ConfigurationManager</AssemblyReference>
+      <AssemblyReference>System.Memory</AssemblyReference>
+      <AssemblyReference>System.Private.Uri</AssemblyReference>
+      <AssemblyReference>System.Data.SqlClient</AssemblyReference>
+      <AssemblyReference>System.Linq.Expressions</AssemblyReference>
+      <AssemblyReference>UiPath.GSuite.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.GSuite</AssemblyReference>
+      <AssemblyReference>System.Linq.Async</AssemblyReference>
+      <AssemblyReference>NPOI.Core</AssemblyReference>
+      <AssemblyReference>System.Collections</AssemblyReference>
+      <AssemblyReference>System.Collections.NonGeneric</AssemblyReference>
+      <AssemblyReference>UiPath.CodedWorkflows</AssemblyReference>
+      <AssemblyReference>UiPath.Workflow</AssemblyReference>
+      <AssemblyReference>System.Runtime.Numerics</AssemblyReference>
+      <AssemblyReference>System.Reflection.DispatchProxy</AssemblyReference>
+      <AssemblyReference>System.Reflection.TypeExtensions</AssemblyReference>
+      <AssemblyReference>System.Reflection.Metadata</AssemblyReference>
+      <AssemblyReference>System.IO.FileSystem.Watcher</AssemblyReference>
+      <AssemblyReference>System.IO.FileSystem.AccessControl</AssemblyReference>
+      <AssemblyReference>System.IO.FileSystem.DriveInfo</AssemblyReference>
+    </sco:Collection>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence DisplayName="Send Escalation Digest Sequence" sap:VirtualizedContainerService.HintSize="618.4,1052.8" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="str_EscalationsFilePath" />
+      <Variable x:TypeArguments="sd:DataTable" Name="dt_Escalations" />
+      <Variable x:TypeArguments="x:String" Name="str_EscalationSummary" />
+      <Variable x:TypeArguments="x:String" Name="str_Prompt" />
+      <Variable x:TypeArguments="x:String" Name="str_Payload" />
+      <Variable x:TypeArguments="x:String" Name="str_OllamaResponse" />
+      <Variable x:TypeArguments="x:String" Name="str_DigestBody" />
+      <Variable x:TypeArguments="x:String" Name="str_HtmlBody" />
+      <Variable x:TypeArguments="x:Int32" Name="int_StatusCode" />
+      <Variable x:TypeArguments="njl:JObject" Name="jo_OllamaWrapper" />
+      <Variable x:TypeArguments="s:String[]" Name="arr_To" />
+      <Variable x:TypeArguments="x:String" Name="str_Subject" />
+    </Sequence.Variables>
+    <sap:WorkflowViewStateService.ViewState>
+      <scg:Dictionary x:TypeArguments="x:String, x:Object">
+        <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+      </scg:Dictionary>
+    </sap:WorkflowViewStateService.ViewState>
+    <!-- Set the path for the escalations file -->
+    <Assign DisplayName="Set Escalations File Path" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="Assign_EscalationsFilePath">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[str_EscalationsFilePath]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">["C:\RPA\Escalations.xlsx"]</InArgument>
+      </Assign.Value>
+    </Assign>
+    <!-- Step 1: Read escalations from file -->
+    <TryCatch DisplayName="Try Read Escalations File" sap:VirtualizedContainerService.HintSize="588.8,422.4" sap2010:WorkflowViewState.IdRef="TryCatch_ReadFile">
+      <TryCatch.Try>
+        <ui:ReadRange Range="{x:Null}" AddHeaders="True" DataTable="[dt_Escalations]" DisplayName="Read Escalations from File" sap:VirtualizedContainerService.HintSize="449.6,194.4" sap2010:WorkflowViewState.IdRef="ReadRange_Escalations" SheetName="Escalations" WorkbookPathResource="[UiPath.Platform.ResourceHandling.LocalResource.FromPath(str_EscalationsFilePath)]" />
+      </TryCatch.Try>
+      <TryCatch.Catches>
+        <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_1">
+          <ActivityAction x:TypeArguments="s:Exception">
+            <ActivityAction.Argument>
+              <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+            </ActivityAction.Argument>
+            <Sequence DisplayName="File Not Found - Create Empty DataTable" sap:VirtualizedContainerService.HintSize="449.6,225.6" sap2010:WorkflowViewState.IdRef="Sequence_NoFile">
+              <ui:LogMessage DisplayName="Log File Not Found" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="LogMessage_NoFile" Level="Info" Message="[&quot;Escalations file not found. No escalations to report.&quot;]" />
+              <ui:BuildDataTable DataTable="[dt_Escalations]" DisplayName="Build Empty Escalations DataTable" sap:VirtualizedContainerService.HintSize="416,92" sap2010:WorkflowViewState.IdRef="BuildDataTable_Empty" TableInfo="&lt;NewDataSet&gt;&#xA;  &lt;xs:schema id=&quot;NewDataSet&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:msdata=&quot;urn:schemas-microsoft-com:xml-msdata&quot;&gt;&#xA;    &lt;xs:element name=&quot;NewDataSet&quot; msdata:IsDataSet=&quot;true&quot; msdata:MainDataTable=&quot;dt_Escalations&quot; msdata:UseCurrentLocale=&quot;true&quot;&gt;&#xA;      &lt;xs:complexType&gt;&#xA;        &lt;xs:choice minOccurs=&quot;0&quot; maxOccurs=&quot;unbounded&quot;&gt;&#xA;          &lt;xs:element name=&quot;dt_Escalations&quot;&gt;&#xA;            &lt;xs:complexType&gt;&#xA;              &lt;xs:sequence&gt;&#xA;                &lt;xs:element name=&quot;Sender&quot; type=&quot;xs:string&quot; minOccurs=&quot;0&quot; /&gt;&#xA;                &lt;xs:element name=&quot;Message&quot; type=&quot;xs:string&quot; minOccurs=&quot;0&quot; /&gt;&#xA;                &lt;xs:element name=&quot;Summary&quot; type=&quot;xs:string&quot; minOccurs=&quot;0&quot; /&gt;&#xA;                &lt;xs:element name=&quot;Timestamp&quot; type=&quot;xs:string&quot; minOccurs=&quot;0&quot; /&gt;&#xA;              &lt;/xs:sequence&gt;&#xA;            &lt;/xs:complexType&gt;&#xA;          &lt;/xs:element&gt;&#xA;        &lt;/xs:choice&gt;&#xA;      &lt;/xs:complexType&gt;&#xA;    &lt;/xs:element&gt;&#xA;  &lt;/xs:schema&gt;&#xA;&lt;/NewDataSet&gt;" />
+            </Sequence>
+          </ActivityAction>
+        </Catch>
+      </TryCatch.Catches>
+    </TryCatch>
+    <!-- Step 2: Check if there are any escalations -->
+    <If Condition="[dt_Escalations IsNot Nothing AndAlso dt_Escalations.Rows.Count &gt; 0]" DisplayName="Check If Escalations Exist" sap:VirtualizedContainerService.HintSize="588.8,832.8" sap2010:WorkflowViewState.IdRef="If_HasEscalations">
+      <If.Then>
+        <Sequence DisplayName="Process Escalations" sap:VirtualizedContainerService.HintSize="553.6,683.2" sap2010:WorkflowViewState.IdRef="Sequence_ProcessEscalations">
+          <sap:WorkflowViewStateService.ViewState>
+            <scg:Dictionary x:TypeArguments="x:String, x:Object">
+              <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            </scg:Dictionary>
+          </sap:WorkflowViewStateService.ViewState>
+          <!-- Step 2a: Build summary text from DataTable -->
+          <Assign DisplayName="Build Escalation Summary" sap:VirtualizedContainerService.HintSize="518.4,174.4" sap2010:WorkflowViewState.IdRef="Assign_BuildSummary">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[str_EscalationSummary]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">["Escalation Report - Generated at " &amp; DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") &amp; Environment.NewLine &amp; "Total Escalations: " &amp; dt_Escalations.Rows.Count.ToString &amp; Environment.NewLine &amp; Environment.NewLine &amp; String.Join(Environment.NewLine, dt_Escalations.AsEnumerable().Select(Function(r) "- [" &amp; r("Timestamp").ToString &amp; "] From: " &amp; r("Sender").ToString &amp; ", Message: " &amp; r("Message").ToString)) &amp; Environment.NewLine &amp; Environment.NewLine &amp; "Please review these escalations and take appropriate action."]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <!-- Step 2b: Build prompt for LLM to create professional digest -->
+          <Assign DisplayName="Build LLM Prompt for Digest" sap:VirtualizedContainerService.HintSize="518.4,174.4" sap2010:WorkflowViewState.IdRef="Assign_PromptDigest">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[str_Prompt]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">["You are a professional assistant creating an executive summary of escalations." &amp; Environment.NewLine &amp; Environment.NewLine &amp; "Take the following raw escalation data and create a concise, professional brief suitable for sending to a supervisor." &amp; Environment.NewLine &amp; "Focus on key points, patterns, and actionable items." &amp; Environment.NewLine &amp; Environment.NewLine &amp; "Raw Escalation Data:" &amp; Environment.NewLine &amp; str_EscalationSummary &amp; Environment.NewLine &amp; Environment.NewLine &amp; "The brief should be 3-5 paragraphs max, highlighting:" &amp; Environment.NewLine &amp; "1. Total number of escalations" &amp; Environment.NewLine &amp; "2. Key senders or recurring issues (if apparent)" &amp; Environment.NewLine &amp; "3. Suggested next steps or priority levels" &amp; Environment.NewLine &amp; Environment.NewLine &amp; "Write in a professional, clear tone."]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <!-- Step 2c: Call Local LLM (Ollama) to generate digest -->
+          <TryCatch DisplayName="Call Ollama for Digest Generation" sap:VirtualizedContainerService.HintSize="518.4,422.4" sap2010:WorkflowViewState.IdRef="TryCatch_OllamaDigest">
+            <TryCatch.Try>
+              <Sequence sap:VirtualizedContainerService.HintSize="375.2,250.4" sap2010:WorkflowViewState.IdRef="Sequence_OllamaTryDigest">
+                <Assign DisplayName="Prepare JSON Payload" sap:VirtualizedContainerService.HintSize="337.6,174.4" sap2010:WorkflowViewState.IdRef="Assign_PayloadDigest">
+                  <Assign.To>
+                    <OutArgument x:TypeArguments="x:String">[str_Payload]</OutArgument>
+                  </Assign.To>
+                  <Assign.Value>
+                    <InArgument x:TypeArguments="x:String">["{""model"":""llama3"",""prompt"":" &amp; Newtonsoft.Json.JsonConvert.SerializeObject(str_Prompt) &amp; ",""stream"":false}"]</InArgument>
+                  </Assign.Value>
+                </Assign>
+                <ui:HttpClient ClientCertificate="{x:Null}" ClientCertificatePassword="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" FileAttachments="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" ResponseAttachment="{x:Null}" ResponseHeaders="{x:Null}" SecureClientCertificatePassword="{x:Null}" SecurePassword="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" AuthenticationType="None" Body="[str_Payload]" BodyFormat="application/json" DisplayName="HTTP POST to Ollama" EnableSSLVerification="True" EndPoint="http://localhost:11434/api/generate" sap2010:WorkflowViewState.IdRef="HttpClient_Digest" Method="POST" Result="[str_OllamaResponse]" StatusCode="[int_StatusCode]" TimeoutMS="120000">
+                  <ui:HttpClient.Attachments>
+                    <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+                  </ui:HttpClient.Attachments>
+                  <ui:HttpClient.Cookies>
+                    <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+                  </ui:HttpClient.Cookies>
+                  <ui:HttpClient.Headers>
+                    <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+                  </ui:HttpClient.Headers>
+                  <ui:HttpClient.Parameters>
+                    <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+                  </ui:HttpClient.Parameters>
+                  <ui:HttpClient.UrlSegments>
+                    <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+                  </ui:HttpClient.UrlSegments>
+                </ui:HttpClient>
+                <!-- Parse Ollama response using Newtonsoft -->
+                <ui:DeserializeJson x:TypeArguments="njl:JObject" JsonSample="{x:Null}" Settings="{x:Null}" DisplayName="Deserialize Ollama Response" sap2010:WorkflowViewState.IdRef="DeserializeJson_Digest" JsonObject="[jo_OllamaWrapper]" JsonString="[str_OllamaResponse]" />
+                <Assign DisplayName="Extract Digest Response" sap:VirtualizedContainerService.HintSize="337.6,174.4" sap2010:WorkflowViewState.IdRef="Assign_ExtractDigest">
+                  <Assign.To>
+                    <OutArgument x:TypeArguments="x:String">[str_DigestBody]</OutArgument>
+                  </Assign.To>
+                  <Assign.Value>
+                    <InArgument x:TypeArguments="x:String">[If(jo_OllamaWrapper IsNot Nothing AndAlso jo_OllamaWrapper("response") IsNot Nothing, jo_OllamaWrapper("response").ToString.Trim, "OLLAMA API ERROR: " &amp; str_OllamaResponse)]</InArgument>
+                  </Assign.Value>
+                </Assign>
+              </Sequence>
+            </TryCatch.Try>
+            <TryCatch.Catches>
+              <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_2">
+                <ActivityAction x:TypeArguments="s:Exception">
+                  <ActivityAction.Argument>
+                    <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+                  </ActivityAction.Argument>
+                  <Sequence sap:VirtualizedContainerService.HintSize="375.2,210.4" sap2010:WorkflowViewState.IdRef="Sequence_ErrorDigest">
+                    <ui:LogMessage DisplayName="Log Ollama Error" sap2010:WorkflowViewState.IdRef="LogMessage_ErrorDigest" Level="Error" Message="[&quot;Ollama request failed: &quot; &amp; exception.Message]" />
+                    <Assign DisplayName="Set Fallback Digest" sap:VirtualizedContainerService.HintSize="375.2,210.4" sap2010:WorkflowViewState.IdRef="Assign_FallbackDigest">
+                      <Assign.To>
+                        <OutArgument x:TypeArguments="x:String">[str_DigestBody]</OutArgument>
+                      </Assign.To>
+                      <Assign.Value>
+                        <InArgument x:TypeArguments="x:String">[str_EscalationSummary]</InArgument>
+                      </Assign.Value>
+                    </Assign>
+                  </Sequence>
+                </ActivityAction>
+              </Catch>
+            </TryCatch.Catches>
+          </TryCatch>
+          <!-- Step 2d: Build HTML email body (XML-encoded) -->
+          <Assign DisplayName="Build HTML Email Body" sap:VirtualizedContainerService.HintSize="518.4,174.4" sap2010:WorkflowViewState.IdRef="Assign_HtmlBody">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[str_HtmlBody]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">["&lt;html&gt;&lt;body style='font-family:Segoe UI,Arial,sans-serif;'&gt;" &amp; "&lt;h2 style='color:#d32f2f;'&gt;Escalation Digest Report&lt;/h2&gt;" &amp; "&lt;p&gt;" &amp; str_DigestBody.Replace(Environment.NewLine, "&lt;br&gt;&lt;br&gt;") &amp; "&lt;/p&gt;" &amp; "&lt;hr&gt;" &amp; "&lt;p style='color:#666;font-size:12px;'&gt;Generated by UiPath RPA - " &amp; DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") &amp; "&lt;/p&gt;" &amp; "&lt;/body&gt;&lt;/html&gt;"]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <!-- Step 2e: Send email via Gmail connection (consistent with project) -->
+          <Assign DisplayName="Assign Computed To" sap:VirtualizedContainerService.HintSize="518.4,174.4" sap2010:WorkflowViewState.IdRef="Assign_ComputedToDigest">
+            <Assign.To>
+              <OutArgument x:TypeArguments="s:String[]">[arr_To]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="s:String[]">[New String(){If(in_SupervisorEmail IsNot Nothing AndAlso in_SupervisorEmail.Length &gt; 0, in_SupervisorEmail, "kushagrgamer26@gmail.com")}]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <Assign DisplayName="Assign Computed Subject" sap:VirtualizedContainerService.HintSize="518.4,174.4" sap2010:WorkflowViewState.IdRef="Assign_ComputedSubjectDigest">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[str_Subject]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">["Escalation Digest Report - " &amp; DateTime.Now.ToString("yyyy-MM-dd")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <uga:SendEmailConnections ArgumentAttachmentPaths="{x:Null}" ArgumentAttachments="{x:Null}" AttachmentPaths="{x:Null}" Bcc="{x:Null}" Cc="{x:Null}" ConnectionAccountName="{x:Null}" ContinueOnError="{x:Null}" ReplyTo="{x:Null}" SingleAttachment="{x:Null}" TextBody="{x:Null}" AttachmentInputMode="UseExisting" AuthScopesInvalid="False" HtmlBody="[str_HtmlBody]" ConnectionId="aa8159d8-46f9-4792-b250-9a68c2a979b9" DisplayName="Send Escalation Digest Email" sap:VirtualizedContainerService.HintSize="518.4,412.8" sap2010:WorkflowViewState.IdRef="SendEmailConnections_Digest" Importance="High" InputType="HTML" SaveAsDraft="False" Subject="[str_Subject]" To="[arr_To]" UseConnectionService="True">
+            <uga:SendEmailConnections.Attachments>
+              <InArgument x:TypeArguments="scg:IEnumerable(upr:IResource)" />
+            </uga:SendEmailConnections.Attachments>
+            <uga:SendEmailConnections.AttachmentsBackup>
+              <usau:BackupSlot x:TypeArguments="ugage:AttachmentInputMode" StoredValue="UseExisting">
+                <usau:BackupSlot.BackupValues>
+                  <scg:Dictionary x:TypeArguments="ugage:AttachmentInputMode, scg:List(x:Object)" />
+                </usau:BackupSlot.BackupValues>
+              </usau:BackupSlot>
+            </uga:SendEmailConnections.AttachmentsBackup>
+            <uga:SendEmailConnections.InputTypeBackup>
+              <usau:BackupSlot x:TypeArguments="ugage:BodyInputType" StoredValue="HTML">
+                <usau:BackupSlot.BackupValues>
+                  <scg:Dictionary x:TypeArguments="ugage:BodyInputType, scg:List(x:Object)" />
+                </usau:BackupSlot.BackupValues>
+              </usau:BackupSlot>
+            </uga:SendEmailConnections.InputTypeBackup>
+          </uga:SendEmailConnections>
+          <ui:LogMessage DisplayName="Log Digest Sent" sap:VirtualizedContainerService.HintSize="518.4,92.8" sap2010:WorkflowViewState.IdRef="LogMessage_DigestSent" Level="Info" Message="[&quot;Escalation digest sent to supervisor.&quot;]" />
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="No Escalations" sap:VirtualizedContainerService.HintSize="553.6,200" sap2010:WorkflowViewState.IdRef="Sequence_NoEscalations">
+          <ui:LogMessage DisplayName="Log No Escalations" sap:VirtualizedContainerService.HintSize="518.4,92.8" sap2010:WorkflowViewState.IdRef="LogMessage_NoEscalations" Level="Info" Message="[&quot;No escalations found. Digest not sent.&quot;]" />
+        </Sequence>
+      </If.Else>
+    </If>
+    <!-- Set output -->
+    <Assign DisplayName="Set Digest Sent Flag" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="Assign_OutDigestSent">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:Boolean">[out_DigestSent]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:Boolean">[dt_Escalations IsNot Nothing AndAlso dt_Escalations.Rows.Count &gt; 0]</InArgument>
+      </Assign.Value>
+    </Assign>
+  </Sequence>
+</Activity>
