@@ -97,23 +97,49 @@
           </ui:HttpClient>
           <ui:LogMessage DisplayName="Log Ollama Response" sap2010:WorkflowViewState.IdRef="LogMessage_OllamaResp" Level="Info" Message="[&quot;Ollama responded. Status: &quot; &amp; int_StatusCode.ToString &amp; &quot;. Response length: &quot; &amp; If(str_OllamaResponse IsNot Nothing, str_OllamaResponse.Length.ToString, &quot;null&quot;)]" />
           <ui:DeserializeJson x:TypeArguments="njl:JObject" JsonSample="{x:Null}" Settings="{x:Null}" DisplayName="Deserialize Ollama Wrapper" sap2010:WorkflowViewState.IdRef="DeserializeJson_1" JsonObject="[jo_OllamaWrapper]" JsonString="[str_OllamaResponse]" />
-          <ui:DeserializeJson x:TypeArguments="njl:JObject" JsonSample="{x:Null}" Settings="{x:Null}" DisplayName="Deserialize Model Output" sap2010:WorkflowViewState.IdRef="DeserializeJson_2" JsonObject="[jo_ModelOutput]" JsonString="[jo_OllamaWrapper(&quot;response&quot;).ToString]" />
-          <Assign DisplayName="Extract Sentiment" sap2010:WorkflowViewState.IdRef="Assign_Sentiment">
-            <Assign.To>
-              <OutArgument x:TypeArguments="x:String">[out_Sentiment]</OutArgument>
-            </Assign.To>
-            <Assign.Value>
-              <InArgument x:TypeArguments="x:String">[jo_ModelOutput("sentiment").ToString]</InArgument>
-            </Assign.Value>
-          </Assign>
-          <Assign DisplayName="Extract Summary" sap2010:WorkflowViewState.IdRef="Assign_Summary">
-            <Assign.To>
-              <OutArgument x:TypeArguments="x:String">[out_Summary]</OutArgument>
-            </Assign.To>
-            <Assign.Value>
-              <InArgument x:TypeArguments="x:String">[jo_ModelOutput("summary").ToString]</InArgument>
-            </Assign.Value>
-          </Assign>
+          <If Condition="[jo_OllamaWrapper IsNot Nothing AndAlso jo_OllamaWrapper(&quot;response&quot;) IsNot Nothing]" DisplayName="If Valid Response" sap2010:WorkflowViewState.IdRef="If_ValidOllamaResponse">
+            <If.Then>
+              <Sequence sap2010:WorkflowViewState.IdRef="Sequence_ValidOllamaResponse">
+                <ui:DeserializeJson x:TypeArguments="njl:JObject" JsonSample="{x:Null}" Settings="{x:Null}" DisplayName="Deserialize Model Output" sap2010:WorkflowViewState.IdRef="DeserializeJson_2" JsonObject="[jo_ModelOutput]" JsonString="[jo_OllamaWrapper(&quot;response&quot;).ToString]" />
+                <Assign DisplayName="Extract Sentiment" sap2010:WorkflowViewState.IdRef="Assign_Sentiment">
+                  <Assign.To>
+                    <OutArgument x:TypeArguments="x:String">[out_Sentiment]</OutArgument>
+                  </Assign.To>
+                  <Assign.Value>
+                    <InArgument x:TypeArguments="x:String">[If(jo_ModelOutput("sentiment") IsNot Nothing, jo_ModelOutput("sentiment").ToString, "Unknown")]</InArgument>
+                  </Assign.Value>
+                </Assign>
+                <Assign DisplayName="Extract Summary" sap2010:WorkflowViewState.IdRef="Assign_Summary">
+                  <Assign.To>
+                    <OutArgument x:TypeArguments="x:String">[out_Summary]</OutArgument>
+                  </Assign.To>
+                  <Assign.Value>
+                    <InArgument x:TypeArguments="x:String">[If(jo_ModelOutput("summary") IsNot Nothing, jo_ModelOutput("summary").ToString, "Failed to parse summary")]</InArgument>
+                  </Assign.Value>
+                </Assign>
+              </Sequence>
+            </If.Then>
+            <If.Else>
+              <Sequence sap2010:WorkflowViewState.IdRef="Sequence_InvalidOllamaResponse">
+                <Assign DisplayName="Extract Sentiment Error" sap2010:WorkflowViewState.IdRef="Assign_Sentiment_Error">
+                  <Assign.To>
+                    <OutArgument x:TypeArguments="x:String">[out_Sentiment]</OutArgument>
+                  </Assign.To>
+                  <Assign.Value>
+                    <InArgument x:TypeArguments="x:String">["Error"]</InArgument>
+                  </Assign.Value>
+                </Assign>
+                <Assign DisplayName="Extract Summary Error" sap2010:WorkflowViewState.IdRef="Assign_Summary_Error">
+                  <Assign.To>
+                    <OutArgument x:TypeArguments="x:String">[out_Summary]</OutArgument>
+                  </Assign.To>
+                  <Assign.Value>
+                    <InArgument x:TypeArguments="x:String">["OLLAMA API ERROR: " &amp; str_OllamaResponse]</InArgument>
+                  </Assign.Value>
+                </Assign>
+              </Sequence>
+            </If.Else>
+          </If>
           <ui:LogMessage DisplayName="Log Analysis Result" sap2010:WorkflowViewState.IdRef="LogMessage_OllamaResult" Level="Info" Message="[&quot;Ollama analysis complete. Sentiment: &quot; &amp; out_Sentiment &amp; &quot; | Summary: &quot; &amp; out_Summary]" />
         </Sequence>
       </TryCatch.Try>

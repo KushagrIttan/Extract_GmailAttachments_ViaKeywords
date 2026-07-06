@@ -155,6 +155,7 @@
       <Variable x:TypeArguments="njl:JObject" Name="jo_OllamaWrapper" />
       <Variable x:TypeArguments="s:String[]" Name="arr_To" />
       <Variable x:TypeArguments="x:String" Name="str_Subject" />
+      <Variable x:TypeArguments="x:String" Name="str_CorpusFilePath" />
     </Sequence.Variables>
     <sap:WorkflowViewStateService.ViewState>
       <scg:Dictionary x:TypeArguments="x:String, x:Object">
@@ -162,10 +163,26 @@
       </scg:Dictionary>
     </sap:WorkflowViewStateService.ViewState>
     <ui:LogMessage DisplayName="Log Start - Voice Drafter" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_Start" Level="Info" Message="[&quot;Starting Email Voice Drafter. Ingesting sent emails for style learning...&quot;]" />
-    <!-- ============================================================ -->
-    <!-- PHASE 1: DATA INGESTION - Read top 50 Sent emails            -->
-    <!-- ============================================================ -->
-    <TryCatch DisplayName="Try Ingest Sent Emails" sap:VirtualizedContainerService.HintSize="588.8,800" sap2010:WorkflowViewState.IdRef="TryCatch_Ingest">
+    <Assign DisplayName="Set Corpus Path" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="Assign_CorpusPath">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[str_CorpusFilePath]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">["C:\RPA\voice_corpus.txt"]</InArgument>
+      </Assign.Value>
+    </Assign>
+    <Assign DisplayName="Read Cached Corpus" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="Assign_ReadCorpus">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[str_SentCorpus]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[If(System.IO.File.Exists(str_CorpusFilePath) AndAlso (DateTime.Now - System.IO.File.GetLastWriteTime(str_CorpusFilePath)).TotalHours &lt; 24, System.IO.File.ReadAllText(str_CorpusFilePath), "")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    <If Condition="[String.IsNullOrEmpty(str_SentCorpus)]" DisplayName="If Cache Empty" sap:VirtualizedContainerService.HintSize="588.8,1100" sap2010:WorkflowViewState.IdRef="If_CacheEmpty">
+      <If.Then>
+        <Sequence DisplayName="Then" sap:VirtualizedContainerService.HintSize="553.6,900" sap2010:WorkflowViewState.IdRef="Sequence_CacheEmptyThen">
+          <TryCatch DisplayName="Try Ingest Sent Emails" sap:VirtualizedContainerService.HintSize="588.8,800" sap2010:WorkflowViewState.IdRef="TryCatch_Ingest">
       <TryCatch.Try>
         <Sequence DisplayName="Ingest Sent Emails" sap:VirtualizedContainerService.HintSize="553.6,700" sap2010:WorkflowViewState.IdRef="Sequence_Ingest">
           <sap:WorkflowViewStateService.ViewState>
@@ -284,6 +301,13 @@
         </Catch>
       </TryCatch.Catches>
     </TryCatch>
+    <ui:WriteTextFile File="{x:Null}" DisplayName="Write Corpus to File" FileName="[str_CorpusFilePath]" Text="[str_SentCorpus]" sap:VirtualizedContainerService.HintSize="588.8,134.4" sap2010:WorkflowViewState.IdRef="WriteTextFile_1" />
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="Else" sap:VirtualizedContainerService.HintSize="553.6,89.6" sap2010:WorkflowViewState.IdRef="Sequence_CacheEmptyElse" />
+      </If.Else>
+    </If>
     <ui:LogMessage DisplayName="Log Corpus Size" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_CorpusSize" Level="Info" Message="[&quot;Corpus built from &quot; &amp; int_EmailCount.ToString &amp; &quot; sent emails. Corpus length: &quot; &amp; str_SentCorpus.Length.ToString &amp; &quot; chars&quot;]" />
     <!-- Truncate corpus if too large for LLM context window -->
     <If Condition="[str_SentCorpus.Length &gt; 12000]" DisplayName="If Corpus Too Large" sap:VirtualizedContainerService.HintSize="588.8,300" sap2010:WorkflowViewState.IdRef="If_TruncateCorpus">
@@ -315,7 +339,7 @@
               <OutArgument x:TypeArguments="x:String">[str_LlmPrompt]</OutArgument>
             </Assign.To>
             <Assign.Value>
-              <InArgument x:TypeArguments="x:String">["You are a personal email assistant. Your job is to draft email replies that perfectly mimic the user's writing style." &amp; vbLf &amp; vbLf &amp; "Here are examples of how the user writes emails (their sent emails):" &amp; vbLf &amp; "==== START OF WRITING SAMPLES ====" &amp; vbLf &amp; str_SentCorpus &amp; vbLf &amp; "==== END OF WRITING SAMPLES ====" &amp; vbLf &amp; vbLf &amp; "Now, draft a reply to the following incoming email. Match the user's tone, vocabulary, greeting style, and sign-off patterns from the samples above." &amp; vbLf &amp; vbLf &amp; "Incoming Email Subject: " &amp; If(in_EmailSubject IsNot Nothing, in_EmailSubject, "(no subject)") &amp; vbLf &amp; "Incoming Email Body:" &amp; vbLf &amp; If(in_EmailBody IsNot Nothing, in_EmailBody, "(empty body)") &amp; vbLf &amp; vbLf &amp; "Write ONLY the reply body text. Do not include subject lines or metadata."]</InArgument>
+              <InArgument x:TypeArguments="x:String">["You are a personal email assistant. Your job is to draft email replies that perfectly mimic the user's writing style." &amp; vbLf &amp; vbLf &amp; "Here are examples of how the user writes emails (their sent emails):" &amp; vbLf &amp; "==== START OF WRITING SAMPLES ====" &amp; vbLf &amp; str_SentCorpus &amp; vbLf &amp; "==== END OF WRITING SAMPLES ====" &amp; vbLf &amp; vbLf &amp; "Now, draft a reply to the following incoming email. Match the user's tone, vocabulary, greeting style, and sign-off patterns from the samples above." &amp; vbLf &amp; vbLf &amp; "Incoming Email Subject: " &amp; If(in_EmailSubject IsNot Nothing, in_EmailSubject, "(no subject)") &amp; vbLf &amp; "Incoming Email Body:" &amp; vbLf &amp; If(in_EmailBody IsNot Nothing, in_EmailBody, "(empty body)") &amp; vbLf &amp; vbLf &amp; "Write ONLY the raw reply body text. DO NOT include any introductory or concluding text like 'Here is the drafted reply email' or 'Sure, here is the reply'. Output only the exact text to be sent, starting directly with the greeting."]</InArgument>
             </Assign.Value>
           </Assign>
           <!-- Build JSON payload for Ollama -->
