@@ -458,6 +458,15 @@
                           <OutArgument x:TypeArguments="x:String" x:Key="out_Summary">[str_Summary]</OutArgument>
                         </ui:InvokeWorkflowFile.Arguments>
                       </ui:InvokeWorkflowFile>
+                      <ui:InvokeWorkflowFile ArgumentsVariable="{x:Null}" ContinueOnError="{x:Null}" DisplayName="Invoke Email_Voice_Drafter workflow" sap:VirtualizedContainerService.HintSize="484.8,176" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_Drafter" UnSafe="False" WorkflowFileName="Email_Voice_Drafter.xaml">
+                        <ui:InvokeWorkflowFile.Arguments>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_EmailSubject">[CurrentEmail.Subject]</InArgument>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_EmailBody">[CurrentEmail.Body]</InArgument>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_ReplyTo">[CurrentEmail.From.Address]</InArgument>
+                          <OutArgument x:TypeArguments="x:Boolean" x:Key="out_DraftCreated" />
+                          <OutArgument x:TypeArguments="x:String" x:Key="out_DraftId" />
+                        </ui:InvokeWorkflowFile.Arguments>
+                      </ui:InvokeWorkflowFile>
                       <ui:AddDataRow DataRow="{x:Null}" ArrayRow="[New Object() {str_CurrentKeyword, str_SanitizedSender, str_Subject, If(str_Sentiment IsNot Nothing, str_Sentiment, &quot;Pending&quot;), If(str_Summary IsNot Nothing, str_Summary, &quot;Pending&quot;), str_Date}]" DataTable="[dt_Results]" DisplayName="Add Result Row" sap:VirtualizedContainerService.HintSize="484.8,220" sap2010:WorkflowViewState.IdRef="AddDataRow_1" />
                       <ui:WriteRange StartingCell="{x:Null}" DataTable="[dt_Results]" DisplayName="CheckPoint Save" sap:VirtualizedContainerService.HintSize="484.8,269.6" sap2010:WorkflowViewState.IdRef="WriteRange_1" SheetName="Results" WorkbookPathResource="[UiPath.Platform.ResourceHandling.LocalResource.FromPath(str_ExcelPath)]" />
                     </Sequence>
