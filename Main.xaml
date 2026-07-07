@@ -153,12 +153,21 @@
       <Variable x:TypeArguments="x:Object" Name="CurrentEmail" />
       <Variable x:TypeArguments="sd:DataTable" Name="dt_ExistingResults" />
       <Variable x:TypeArguments="x:Boolean" Name="bool_HasExisting" />
+      <Variable x:TypeArguments="scg:HashSet(x:String)" Name="hs_ProcessedEmails" />
     </Sequence.Variables>
     <sap:WorkflowViewStateService.ViewState>
       <scg:Dictionary x:TypeArguments="x:String, x:Object">
         <x:Boolean x:Key="IsExpanded">True</x:Boolean>
       </scg:Dictionary>
     </sap:WorkflowViewStateService.ViewState>
+    <Assign DisplayName="Initialize HashSet" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="Assign_InitHashSet">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:HashSet(x:String)">[hs_ProcessedEmails]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:HashSet(x:String)">[New System.Collections.Generic.HashSet(Of String)()]</InArgument>
+      </Assign.Value>
+    </Assign>
     <Assign DisplayName="Set Excel Path" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="Assign_Config1">
       <Assign.To>
         <OutArgument x:TypeArguments="x:String">[str_ExcelPath]</OutArgument>
@@ -367,7 +376,7 @@
                           </scg:List>
                         </ui:MultipleAssign.AssignOperations>
                       </ui:MultipleAssign>
-                      <If Condition="[bool_HasExisting AndAlso dt_ExistingResults.Select(&quot;Keyword = '&quot; &amp; str_CurrentKeyword.Replace(&quot;'&quot;,&quot;''&quot;) &amp; &quot;' AND Subject = '&quot; &amp; str_Subject.Replace(&quot;'&quot;,&quot;''&quot;) &amp; &quot;'&quot;).Length &gt; 0]" DisplayName="Skip If Already Processed" sap:VirtualizedContainerService.HintSize="484.8,510.4" sap2010:WorkflowViewState.IdRef="If_2">
+                      <If Condition="[hs_ProcessedEmails.Contains(str_MessageId) OrElse (bool_HasExisting AndAlso dt_ExistingResults.Select(&quot;Keyword = '&quot; &amp; str_CurrentKeyword.Replace(&quot;'&quot;,&quot;''&quot;) &amp; &quot;' AND Subject = '&quot; &amp; str_Subject.Replace(&quot;'&quot;,&quot;''&quot;) &amp; &quot;'&quot;).Length &gt; 0)]" DisplayName="Skip If Already Processed" sap:VirtualizedContainerService.HintSize="484.8,510.4" sap2010:WorkflowViewState.IdRef="If_2">
                         <If.Then>
                           <Sequence DisplayName="Then" sap:VirtualizedContainerService.HintSize="449.6,282.4" sap2010:WorkflowViewState.IdRef="Sequence_6">
                             <sap:WorkflowViewStateService.ViewState>
@@ -380,12 +389,18 @@
                           </Sequence>
                         </If.Then>
                         <If.Else>
-                          <Sequence DisplayName="Else" sap:VirtualizedContainerService.HintSize="449.6,89.6" sap2010:WorkflowViewState.IdRef="Sequence_7">
+                          <Sequence DisplayName="Else" sap:VirtualizedContainerService.HintSize="449.6,200" sap2010:WorkflowViewState.IdRef="Sequence_7">
                             <sap:WorkflowViewStateService.ViewState>
                               <scg:Dictionary x:TypeArguments="x:String, x:Object">
                                 <x:Boolean x:Key="IsExpanded">True</x:Boolean>
                               </scg:Dictionary>
                             </sap:WorkflowViewStateService.ViewState>
+                            <InvokeMethod DisplayName="Add to HashSet" sap:VirtualizedContainerService.HintSize="237.6,134.4" sap2010:WorkflowViewState.IdRef="InvokeMethod_AddHash" MethodName="Add">
+                              <InvokeMethod.TargetObject>
+                                <InArgument x:TypeArguments="scg:HashSet(x:String)">[hs_ProcessedEmails]</InArgument>
+                              </InvokeMethod.TargetObject>
+                              <InArgument x:TypeArguments="x:String">[str_MessageId]</InArgument>
+                            </InvokeMethod>
                           </Sequence>
                         </If.Else>
                       </If>
