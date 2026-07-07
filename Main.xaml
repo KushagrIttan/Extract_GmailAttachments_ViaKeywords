@@ -1,4 +1,4 @@
-<Activity mc:Ignorable="sap sap2010" x:Class="Main" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:sd="clr-namespace:System.Data;assembly=System.Data.Common" xmlns:uga="clr-namespace:UiPath.GSuite.Activities;assembly=UiPath.GSuite.Activities" xmlns:ugae="clr-namespace:UiPath.GSuite.Activities.Enums;assembly=UiPath.GSuite.Activities" xmlns:ugage="clr-namespace:UiPath.GSuite.Activities.Gmail.Enums;assembly=UiPath.GSuite.Activities" xmlns:ugagf="clr-namespace:UiPath.GSuite.Activities.Gmail.Filters;assembly=UiPath.GSuite.Activities" xmlns:ugagm="clr-namespace:UiPath.GSuite.Activities.Gmail.Models;assembly=UiPath.GSuite.Activities" xmlns:ugm="clr-namespace:UiPath.GSuite.Models;assembly=UiPath.GSuite" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:upr="clr-namespace:UiPath.Platform.ResourceHandling;assembly=UiPath.Platform" xmlns:usau="clr-namespace:UiPath.Shared.Activities.Utils;assembly=UiPath.GSuite.Activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Activity mc:Ignorable="sap sap2010" x:Class="Main" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:njl="clr-namespace:Newtonsoft.Json.Linq;assembly=Newtonsoft.Json" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:sd="clr-namespace:System.Data;assembly=System.Data.Common" xmlns:uga="clr-namespace:UiPath.GSuite.Activities;assembly=UiPath.GSuite.Activities" xmlns:ugae="clr-namespace:UiPath.GSuite.Activities.Enums;assembly=UiPath.GSuite.Activities" xmlns:ugage="clr-namespace:UiPath.GSuite.Activities.Gmail.Enums;assembly=UiPath.GSuite.Activities" xmlns:ugagf="clr-namespace:UiPath.GSuite.Activities.Gmail.Filters;assembly=UiPath.GSuite.Activities" xmlns:ugagm="clr-namespace:UiPath.GSuite.Activities.Gmail.Models;assembly=UiPath.GSuite.Activities" xmlns:ugm="clr-namespace:UiPath.GSuite.Models;assembly=UiPath.GSuite" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:upr="clr-namespace:UiPath.Platform.ResourceHandling;assembly=UiPath.Platform" xmlns:usau="clr-namespace:UiPath.Shared.Activities.Utils;assembly=UiPath.GSuite.Activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <x:Members>
     <x:Property Name="in_ExcelPath" Type="InArgument(x:String)" />
     <x:Property Name="in_AttachmentRoot" Type="InArgument(x:String)" />
@@ -154,6 +154,9 @@
       <Variable x:TypeArguments="sd:DataTable" Name="dt_ExistingResults" />
       <Variable x:TypeArguments="x:Boolean" Name="bool_HasExisting" />
       <Variable x:TypeArguments="scg:HashSet(x:String)" Name="hs_ProcessedEmails" />
+      <Variable x:TypeArguments="x:String" Name="str_WaResponse" />
+      <Variable x:TypeArguments="x:Int32" Name="int_WaStatus" />
+      <Variable x:TypeArguments="njl:JObject" Name="jo_WaData" />
     </Sequence.Variables>
     <sap:WorkflowViewStateService.ViewState>
       <scg:Dictionary x:TypeArguments="x:String, x:Object">
@@ -545,6 +548,62 @@
         </usau:BackupSlot>
       </uga:SendEmailConnections.InputTypeBackup>
     </uga:SendEmailConnections>
+    <!-- Phase: Process WhatsApp Queue -->
+    <ui:LogMessage DisplayName="Log WhatsApp Phase" sap:VirtualizedContainerService.HintSize="588.8,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_WAStart" Level="Info" Message="[&quot;Checking WhatsApp Microservice queue for unread messages...&quot;]" />
+    <ui:HttpClient ClientCertificate="{x:Null}" ClientCertificatePassword="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" FileAttachments="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" ResponseAttachment="{x:Null}" ResponseHeaders="{x:Null}" SecureClientCertificatePassword="{x:Null}" SecurePassword="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" AuthenticationType="None" Body="{x:Null}" BodyFormat="application/xml" DisplayName="HTTP GET WhatsApp Messages" EnableSSLVerification="True" EndPoint="http://localhost:3000/api/messages" sap:VirtualizedContainerService.HintSize="588.8,122.4" sap2010:WorkflowViewState.IdRef="HttpClient_WA" Method="GET" Result="[str_WaResponse]" StatusCode="[int_WaStatus]" TimeoutMS="6000">
+      <ui:HttpClient.Attachments>
+        <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+      </ui:HttpClient.Attachments>
+      <ui:HttpClient.Cookies>
+        <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+      </ui:HttpClient.Cookies>
+      <ui:HttpClient.Headers>
+        <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+      </ui:HttpClient.Headers>
+      <ui:HttpClient.Parameters>
+        <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+      </ui:HttpClient.Parameters>
+      <ui:HttpClient.UrlSegments>
+        <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+      </ui:HttpClient.UrlSegments>
+    </ui:HttpClient>
+    <If Condition="[int_WaStatus = 200 AndAlso Not String.IsNullOrEmpty(str_WaResponse)]" DisplayName="If WhatsApp Success" sap:VirtualizedContainerService.HintSize="588.8,1200" sap2010:WorkflowViewState.IdRef="If_WASuccess">
+      <If.Then>
+        <Sequence sap:VirtualizedContainerService.HintSize="553.6,1000" sap2010:WorkflowViewState.IdRef="Sequence_WASuccess">
+          <ui:DeserializeJson x:TypeArguments="njl:JObject" JsonSample="{x:Null}" Settings="{x:Null}" DisplayName="Deserialize WA Response" sap:VirtualizedContainerService.HintSize="518.4,142.4" sap2010:WorkflowViewState.IdRef="DeserializeJson_WA" JsonObject="[jo_WaData]" JsonString="[str_WaResponse]" />
+          <If Condition="[jo_WaData(&quot;count&quot;) IsNot Nothing AndAlso CInt(jo_WaData(&quot;count&quot;)) &gt; 0]" DisplayName="If Messages Found" sap:VirtualizedContainerService.HintSize="518.4,721.6" sap2010:WorkflowViewState.IdRef="If_WAMessages">
+            <If.Then>
+              <ui:ForEach x:TypeArguments="njl:JToken" CurrentIndex="{x:Null}" DisplayName="For Each WA Message" sap:VirtualizedContainerService.HintSize="484.8,421.6" sap2010:WorkflowViewState.IdRef="ForEach_WAMsg" Values="[jo_WaData(&quot;messages&quot;)]">
+                <ui:ForEach.Body>
+                  <ActivityAction x:TypeArguments="njl:JToken">
+                    <ActivityAction.Argument>
+                      <DelegateInArgument x:TypeArguments="njl:JToken" Name="waMsg" />
+                    </ActivityAction.Argument>
+                    <Sequence sap:VirtualizedContainerService.HintSize="449.6,296.8" sap2010:WorkflowViewState.IdRef="Sequence_ProcessWAMsg">
+                      <ui:InvokeWorkflowFile ArgumentsVariable="{x:Null}" ContinueOnError="{x:Null}" DisplayName="Invoke WhatsApp_Triage_Agent" sap:VirtualizedContainerService.HintSize="416,207.2" sap2010:WorkflowViewState.IdRef="Invoke_WATriage" UnSafe="False" WorkflowFileName="WhatsApp_Triage_Agent.xaml">
+                        <ui:InvokeWorkflowFile.Arguments>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_Message">[waMsg("body").ToString]</InArgument>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_Sender">[waMsg("sender").ToString]</InArgument>
+                          <OutArgument x:TypeArguments="x:Boolean" x:Key="out_EscalationAdded" />
+                        </ui:InvokeWorkflowFile.Arguments>
+                      </ui:InvokeWorkflowFile>
+                    </Sequence>
+                  </ActivityAction>
+                </ui:ForEach.Body>
+              </ui:ForEach>
+            </If.Then>
+            <If.Else>
+              <Sequence DisplayName="Else" sap:VirtualizedContainerService.HintSize="449.6,89.6" sap2010:WorkflowViewState.IdRef="Sequence_NoWAMsg" />
+            </If.Else>
+          </If>
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="Else" sap:VirtualizedContainerService.HintSize="449.6,200" sap2010:WorkflowViewState.IdRef="Sequence_WAError">
+          <ui:LogMessage DisplayName="Log WA API Error" sap:VirtualizedContainerService.HintSize="334.4,142.4" sap2010:WorkflowViewState.IdRef="LogMessage_WAErr" Level="Warn" Message="[&quot;Could not reach WhatsApp Microservice. Is node index.js running? Status: &quot; &amp; int_WaStatus.ToString]" />
+        </Sequence>
+      </If.Else>
+    </If>
     <ui:LogMessage DisplayName="Log Complete" sap:VirtualizedContainerService.HintSize="588.8,165.6" sap2010:WorkflowViewState.IdRef="LogMessage_End" Level="Info" Message="[&quot;Workflow complete. Total matches: &quot; &amp; int_MatchCount.ToString &amp; &quot;. Results rows: &quot; &amp; dt_Results.Rows.Count.ToString]" />
   </Sequence>
 </Activity>
