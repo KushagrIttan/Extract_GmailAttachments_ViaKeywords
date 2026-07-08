@@ -138,6 +138,9 @@
       <Variable x:TypeArguments="sd:DataRow" Name="dr_NewRow" />
       <Variable x:TypeArguments="x:String" Name="str_StubResponse" />
       <Variable x:TypeArguments="njl:JObject" Name="jo_TriageResult" />
+      <Variable x:TypeArguments="x:Int32" Name="int_Confidence" />
+      <Variable x:TypeArguments="x:String" Name="str_Reason" />
+      <Variable x:TypeArguments="x:String" Name="str_OptionsJson" />
     </Sequence.Variables>
     <sap:WorkflowViewStateService.ViewState>
       <scg:Dictionary x:TypeArguments="x:String, x:Object">
@@ -157,7 +160,7 @@
         <OutArgument x:TypeArguments="x:String">[str_Prompt]</OutArgument>
       </Assign.To>
       <Assign.Value>
-        <InArgument x:TypeArguments="x:String">["You are a triage agent for WhatsApp messages. Analyze the following message and return a JSON object with exactly two keys:" &amp; Environment.NewLine &amp; "1. 'intent': one of 'General', 'Escalation', 'Spam'" &amp; Environment.NewLine &amp; "2. 'draft_response': a concise, appropriate response to the message (if intent is General or Escalation; for Spam, can be empty string)" &amp; Environment.NewLine &amp; Environment.NewLine &amp; "Message: " &amp; in_Message &amp; Environment.NewLine &amp; "Sender: " &amp; in_Sender]</InArgument>
+        <InArgument x:TypeArguments="x:String">["You are a triage agent for WhatsApp messages. Analyze the following message and return a JSON object with exactly four keys:" &amp; Environment.NewLine &amp; "1. 'intent': one of 'General', 'Escalation', 'Spam', or 'Scam'" &amp; Environment.NewLine &amp; "2. 'confidence': an integer from 0 to 100 representing your confidence in the intent." &amp; Environment.NewLine &amp; "3. 'reason': a brief explanation of why you chose this intent." &amp; Environment.NewLine &amp; "4. 'options': a JSON array of exactly 3 strings representing different potential drafted replies (only if intent is General; otherwise empty array)." &amp; Environment.NewLine &amp; Environment.NewLine &amp; "Message: " &amp; in_Message &amp; Environment.NewLine &amp; "Sender: " &amp; in_Sender]</InArgument>
       </Assign.Value>
     </Assign>
     <TryCatch DisplayName="Call Ollama for Triage" sap:VirtualizedContainerService.HintSize="451.2,1747.2" sap2010:WorkflowViewState.IdRef="TryCatch_1">
@@ -211,12 +214,28 @@
               <InArgument x:TypeArguments="x:String">[jo_TriageResult("intent").ToString.Trim]</InArgument>
             </Assign.Value>
           </Assign>
-          <Assign DisplayName="Extract Draft Response" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="Assign_DraftResponse">
+          <Assign DisplayName="Extract Confidence" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="Assign_Confidence">
             <Assign.To>
-              <OutArgument x:TypeArguments="x:String">[str_DraftResponse]</OutArgument>
+              <OutArgument x:TypeArguments="x:Int32">[int_Confidence]</OutArgument>
             </Assign.To>
             <Assign.Value>
-              <InArgument x:TypeArguments="x:String">[jo_TriageResult("draft_response").ToString.Trim]</InArgument>
+              <InArgument x:TypeArguments="x:Int32">[Convert.ToInt32(jo_TriageResult("confidence"))]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <Assign DisplayName="Extract Reason" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="Assign_Reason">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[str_Reason]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[jo_TriageResult("reason").ToString.Trim]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <Assign DisplayName="Extract Options" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="Assign_Options">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[str_OptionsJson]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[jo_TriageResult("options").ToString(Newtonsoft.Json.Formatting.None)]</InArgument>
             </Assign.Value>
           </Assign>
         </Sequence>
@@ -239,15 +258,23 @@
                   <OutArgument x:TypeArguments="x:String">[str_Intent]</OutArgument>
                 </Assign.To>
                 <Assign.Value>
-                  <InArgument x:TypeArguments="x:String">["General"]</InArgument>
+                  <InArgument x:TypeArguments="x:String">["Escalation"]</InArgument>
                 </Assign.Value>
               </Assign>
-              <Assign DisplayName="Set Default Draft Response" sap:VirtualizedContainerService.HintSize="416,80" sap2010:WorkflowViewState.IdRef="Assign_DefaultDraft">
+              <Assign DisplayName="Set Default Confidence" sap:VirtualizedContainerService.HintSize="416,80" sap2010:WorkflowViewState.IdRef="Assign_DefaultConf">
                 <Assign.To>
-                  <OutArgument x:TypeArguments="x:String">[str_DraftResponse]</OutArgument>
+                  <OutArgument x:TypeArguments="x:Int32">[int_Confidence]</OutArgument>
                 </Assign.To>
                 <Assign.Value>
-                  <InArgument x:TypeArguments="x:String">["Sorry, I could not process this message."]</InArgument>
+                  <InArgument x:TypeArguments="x:Int32">[0]</InArgument>
+                </Assign.Value>
+              </Assign>
+              <Assign DisplayName="Set Default Options" sap:VirtualizedContainerService.HintSize="416,80" sap2010:WorkflowViewState.IdRef="Assign_DefaultOptions">
+                <Assign.To>
+                  <OutArgument x:TypeArguments="x:String">[str_OptionsJson]</OutArgument>
+                </Assign.To>
+                <Assign.Value>
+                  <InArgument x:TypeArguments="x:String">["[]"]</InArgument>
                 </Assign.Value>
               </Assign>
             </Sequence>
@@ -283,7 +310,7 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
         <ui:LogMessage DisplayName="Log General Intent" sap:VirtualizedContainerService.HintSize="416,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_General" Level="Info" Message="[&quot;Intent is General. Sending WhatsApp response.&quot;]" />
-        <ui:HttpClient ClientCertificate="{x:Null}" ClientCertificatePassword="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" FileAttachments="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" ResponseAttachment="{x:Null}" ResponseHeaders="{x:Null}" SecureClientCertificatePassword="{x:Null}" SecurePassword="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" AuthenticationType="None" Body="[&quot;{&quot;&quot;to&quot;&quot;:&quot;&quot;&quot; &amp; in_SenderId &amp; &quot;&quot;&quot;,&quot;&quot;message&quot;&quot;:&quot;&quot;&quot; &amp; str_DraftResponse.Replace(&quot;&quot;&quot;&quot;,&quot;\&quot;&quot;&quot;).Replace(vbCrLf,&quot;\n&quot;).Replace(vbLf,&quot;\n&quot;) &amp; &quot;&quot;&quot;}&quot;]" BodyFormat="application/json" DisplayName="HTTP POST Send WhatsApp" EnableSSLVerification="True" EndPoint="http://localhost:3000/api/send" sap:VirtualizedContainerService.HintSize="416,103.2" sap2010:WorkflowViewState.IdRef="HttpClient_SendWA" Method="POST" Result="[str_StubResponse]" StatusCode="{x:Null}" TimeoutMS="6000">
+        <ui:HttpClient ClientCertificate="{x:Null}" ClientCertificatePassword="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" FileAttachments="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" ResponseAttachment="{x:Null}" ResponseHeaders="{x:Null}" SecureClientCertificatePassword="{x:Null}" SecurePassword="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" AuthenticationType="None" Body="[&quot;{&quot;&quot;to&quot;&quot;:&quot;&quot;&quot; &amp; in_SenderId &amp; &quot;&quot;&quot;,&quot;&quot;senderName&quot;&quot;:&quot;&quot;&quot; &amp; in_Sender &amp; &quot;&quot;&quot;,&quot;&quot;message&quot;&quot;:&quot;&quot;&quot; &amp; in_Message.Replace(&quot;&quot;&quot;&quot;,&quot;\&quot;&quot;&quot;).Replace(vbCrLf,&quot;\n&quot;).Replace(vbLf,&quot;\n&quot;) &amp; &quot;&quot;&quot;,&quot;&quot;options&quot;&quot;:&quot; &amp; str_OptionsJson &amp; &quot;}&quot;]" BodyFormat="application/json" DisplayName="HTTP POST Telegram Approval" EnableSSLVerification="True" EndPoint="http://localhost:3000/api/telegram_approval" sap:VirtualizedContainerService.HintSize="416,103.2" sap2010:WorkflowViewState.IdRef="HttpClient_SendWA" Method="POST" Result="[str_StubResponse]" StatusCode="{x:Null}" TimeoutMS="6000">
           <ui:HttpClient.Attachments>
             <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
           </ui:HttpClient.Attachments>
@@ -341,13 +368,21 @@
           </Assign.Value>
         </Assign>
       </Sequence>
-      <Sequence x:Key="Spam" DisplayName="Spam Intent - Ignore" sap:VirtualizedContainerService.HintSize="449.6,225.6" sap2010:WorkflowViewState.IdRef="Sequence_Spam">
-        <sap:WorkflowViewStateService.ViewState>
-          <scg:Dictionary x:TypeArguments="x:String, x:Object">
-            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
-          </scg:Dictionary>
-        </sap:WorkflowViewStateService.ViewState>
-        <ui:LogMessage DisplayName="Log Spam Intent" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="LogMessage_Spam" Level="Info" Message="[&quot;Intent is Spam. Ignoring message.&quot;]" />
+      <Sequence x:Key="Spam" DisplayName="Spam Intent - Ignore or Alert" sap:VirtualizedContainerService.HintSize="449.6,225.6" sap2010:WorkflowViewState.IdRef="Sequence_Spam">
+        <ui:LogMessage DisplayName="Log Spam Intent" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="LogMessage_Spam" Level="Info" Message="[&quot;Intent is Spam. Confidence: &quot; &amp; int_Confidence.ToString]" />
+        <If Condition="[int_Confidence &gt;= 85]" DisplayName="If High Confidence Spam" sap:VirtualizedContainerService.HintSize="416,350.4" sap2010:WorkflowViewState.IdRef="If_SpamConfidence">
+          <If.Then>
+            <ui:HttpClient ClientCertificate="{x:Null}" ClientCertificatePassword="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" FileAttachments="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" ResponseAttachment="{x:Null}" ResponseHeaders="{x:Null}" SecureClientCertificatePassword="{x:Null}" SecurePassword="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" AuthenticationType="None" Body="[&quot;{&quot;&quot;intent&quot;&quot;:&quot;&quot;Spam&quot;&quot;,&quot;&quot;confidence&quot;&quot;:&quot; &amp; int_Confidence.ToString &amp; &quot;,&quot;&quot;reason&quot;&quot;:&quot;&quot;&quot; &amp; str_Reason.Replace(&quot;&quot;&quot;&quot;,&quot;\&quot;&quot;&quot;) &amp; &quot;&quot;&quot;,&quot;&quot;senderName&quot;&quot;:&quot;&quot;&quot; &amp; in_Sender &amp; &quot;&quot;&quot;,&quot;&quot;message&quot;&quot;:&quot;&quot;&quot; &amp; in_Message.Replace(&quot;&quot;&quot;&quot;,&quot;\&quot;&quot;&quot;).Replace(vbCrLf,&quot;\n&quot;).Replace(vbLf,&quot;\n&quot;) &amp; &quot;&quot;&quot;}&quot;]" BodyFormat="application/json" DisplayName="HTTP POST Telegram Alert Spam" EnableSSLVerification="True" EndPoint="http://localhost:3000/api/telegram_alert" sap:VirtualizedContainerService.HintSize="416,103.2" sap2010:WorkflowViewState.IdRef="HttpClient_SpamAlert" Method="POST" StatusCode="{x:Null}" TimeoutMS="6000" />
+          </If.Then>
+        </If>
+      </Sequence>
+      <Sequence x:Key="Scam" DisplayName="Scam Intent - Alert" sap:VirtualizedContainerService.HintSize="449.6,225.6" sap2010:WorkflowViewState.IdRef="Sequence_Scam">
+        <ui:LogMessage DisplayName="Log Scam Intent" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="LogMessage_Scam" Level="Error" Message="[&quot;CRITICAL: Scam Detected! Confidence: &quot; &amp; int_Confidence.ToString]" />
+        <If Condition="[int_Confidence &gt;= 85]" DisplayName="If High Confidence Scam" sap:VirtualizedContainerService.HintSize="416,350.4" sap2010:WorkflowViewState.IdRef="If_ScamConfidence">
+          <If.Then>
+            <ui:HttpClient ClientCertificate="{x:Null}" ClientCertificatePassword="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" FileAttachments="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" ResponseAttachment="{x:Null}" ResponseHeaders="{x:Null}" SecureClientCertificatePassword="{x:Null}" SecurePassword="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" AuthenticationType="None" Body="[&quot;{&quot;&quot;intent&quot;&quot;:&quot;&quot;Scam&quot;&quot;,&quot;&quot;confidence&quot;&quot;:&quot; &amp; int_Confidence.ToString &amp; &quot;,&quot;&quot;reason&quot;&quot;:&quot;&quot;&quot; &amp; str_Reason.Replace(&quot;&quot;&quot;&quot;,&quot;\&quot;&quot;&quot;) &amp; &quot;&quot;&quot;,&quot;&quot;senderName&quot;&quot;:&quot;&quot;&quot; &amp; in_Sender &amp; &quot;&quot;&quot;,&quot;&quot;message&quot;&quot;:&quot;&quot;&quot; &amp; in_Message.Replace(&quot;&quot;&quot;&quot;,&quot;\&quot;&quot;&quot;).Replace(vbCrLf,&quot;\n&quot;).Replace(vbLf,&quot;\n&quot;) &amp; &quot;&quot;&quot;}&quot;]" BodyFormat="application/json" DisplayName="HTTP POST Telegram Alert Scam" EnableSSLVerification="True" EndPoint="http://localhost:3000/api/telegram_alert" sap:VirtualizedContainerService.HintSize="416,103.2" sap2010:WorkflowViewState.IdRef="HttpClient_ScamAlert" Method="POST" StatusCode="{x:Null}" TimeoutMS="6000" />
+          </If.Then>
+        </If>
       </Sequence>
     </Switch>
   </Sequence>
