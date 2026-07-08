@@ -583,7 +583,8 @@
                       <ui:InvokeWorkflowFile ArgumentsVariable="{x:Null}" ContinueOnError="{x:Null}" DisplayName="Invoke WhatsApp_Triage_Agent" sap:VirtualizedContainerService.HintSize="416,207.2" sap2010:WorkflowViewState.IdRef="Invoke_WATriage" UnSafe="False" WorkflowFileName="WhatsApp_Triage_Agent.xaml">
                         <ui:InvokeWorkflowFile.Arguments>
                           <InArgument x:TypeArguments="x:String" x:Key="in_Message">[waMsg("body").ToString]</InArgument>
-                          <InArgument x:TypeArguments="x:String" x:Key="in_Sender">[waMsg("sender").ToString]</InArgument>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_Sender">[waMsg("senderName").ToString]</InArgument>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_SenderId">[waMsg("senderId").ToString]</InArgument>
                           <OutArgument x:TypeArguments="x:Boolean" x:Key="out_EscalationAdded" />
                         </ui:InvokeWorkflowFile.Arguments>
                       </ui:InvokeWorkflowFile>

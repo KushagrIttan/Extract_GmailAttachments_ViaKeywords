@@ -1,2 +1,3 @@
-2026/07/07-14:27:48.784 7510 Creating DB C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\WhatsApp_Listener\.wwebjs_auth\session\Default\shared_proto_db\metadata since it was missing.
-2026/07/07-14:27:48.805 7510 Reusing MANIFEST C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\WhatsApp_Listener\.wwebjs_auth\session\Default\shared_proto_db\metadata/MANIFEST-000001
+2026/07/08-11:59:30.487 42a8 Reusing MANIFEST C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\WhatsApp_Listener\.wwebjs_auth\session\Default\shared_proto_db\metadata/MANIFEST-000001
+2026/07/08-11:59:30.488 42a8 Recovering log #3
+2026/07/08-11:59:30.488 42a8 Reusing old log C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\WhatsApp_Listener\.wwebjs_auth\session\Default\shared_proto_db\metadata/000003.log 

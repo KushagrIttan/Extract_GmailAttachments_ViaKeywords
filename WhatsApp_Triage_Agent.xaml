@@ -2,6 +2,7 @@
   <x:Members>
     <x:Property Name="in_Message" Type="InArgument(x:String)" />
     <x:Property Name="in_Sender" Type="InArgument(x:String)" />
+    <x:Property Name="in_SenderId" Type="InArgument(x:String)" />
     <x:Property Name="out_EscalationAdded" Type="OutArgument(x:Boolean)" />
   </x:Members>
   <VisualBasic.Settings>
@@ -282,14 +283,23 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
         <ui:LogMessage DisplayName="Log General Intent" sap:VirtualizedContainerService.HintSize="416,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_General" Level="Info" Message="[&quot;Intent is General. Sending WhatsApp response.&quot;]" />
-        <Assign DisplayName="Stub WhatsApp API Call" sap:VirtualizedContainerService.HintSize="416,174.4" sap2010:WorkflowViewState.IdRef="Assign_StubWhatsApp">
-          <Assign.To>
-            <OutArgument x:TypeArguments="x:String">[str_StubResponse]</OutArgument>
-          </Assign.To>
-          <Assign.Value>
-            <InArgument x:TypeArguments="x:String">["HITL_REQUIRED_UPDATE_LATER: WhatsApp API call would be made here with Bearer Token and Phone Number ID"]</InArgument>
-          </Assign.Value>
-        </Assign>
+        <ui:HttpClient ClientCertificate="{x:Null}" ClientCertificatePassword="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" FileAttachments="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" ResponseAttachment="{x:Null}" ResponseHeaders="{x:Null}" SecureClientCertificatePassword="{x:Null}" SecurePassword="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" AuthenticationType="None" Body="[&quot;{&quot;&quot;to&quot;&quot;:&quot;&quot;&quot; &amp; in_SenderId &amp; &quot;&quot;&quot;,&quot;&quot;message&quot;&quot;:&quot;&quot;&quot; &amp; str_DraftResponse.Replace(&quot;&quot;&quot;&quot;,&quot;\&quot;&quot;&quot;).Replace(vbCrLf,&quot;\n&quot;).Replace(vbLf,&quot;\n&quot;) &amp; &quot;&quot;&quot;}&quot;]" BodyFormat="application/json" DisplayName="HTTP POST Send WhatsApp" EnableSSLVerification="True" EndPoint="http://localhost:3000/api/send" sap:VirtualizedContainerService.HintSize="416,103.2" sap2010:WorkflowViewState.IdRef="HttpClient_SendWA" Method="POST" Result="[str_StubResponse]" StatusCode="{x:Null}" TimeoutMS="6000">
+          <ui:HttpClient.Attachments>
+            <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+          </ui:HttpClient.Attachments>
+          <ui:HttpClient.Cookies>
+            <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+          </ui:HttpClient.Cookies>
+          <ui:HttpClient.Headers>
+            <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+          </ui:HttpClient.Headers>
+          <ui:HttpClient.Parameters>
+            <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+          </ui:HttpClient.Parameters>
+          <ui:HttpClient.UrlSegments>
+            <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+          </ui:HttpClient.UrlSegments>
+        </ui:HttpClient>
         <ui:LogMessage DisplayName="Log Stub" sap:VirtualizedContainerService.HintSize="416,165.6" sap2010:WorkflowViewState.IdRef="LogMessage_Stub" Level="Info" Message="[&quot;Stub: &quot; &amp; str_StubResponse]" />
       </Sequence>
       <Sequence x:Key="Escalation" DisplayName="Escalation Intent - Add to Escalations" sap:VirtualizedContainerService.HintSize="449.6,1421.6" sap2010:WorkflowViewState.IdRef="Sequence_Escalation">

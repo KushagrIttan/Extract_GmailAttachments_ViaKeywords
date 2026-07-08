@@ -3,6 +3,7 @@ const qrcode = require('qrcode-terminal');
 const express = require('express');
 
 const app = express();
+app.use(express.json());
 const port = 3000;
 
 // In-memory queue to hold incoming messages
@@ -52,7 +53,8 @@ client.on('message', async (msg) => {
         
         // Push to queue
         messageQueue.push({
-            sender: sender,
+            senderId: msg.from,
+            senderName: sender,
             body: msg.body,
             timestamp: new Date().toISOString()
         });
@@ -75,6 +77,24 @@ app.get('/api/messages', (req, res) => {
         count: queuedMessages.length,
         messages: queuedMessages
     });
+});
+
+// Endpoint to send a WhatsApp message
+app.post('/api/send', async (req, res) => {
+    const { to, message } = req.body;
+    
+    if (!to || !message) {
+        return res.status(400).json({ error: "Missing 'to' or 'message' in request body." });
+    }
+    
+    try {
+        await client.sendMessage(to, message);
+        console.log(`[API] Successfully sent reply to: ${to}`);
+        res.json({ status: 'success' });
+    } catch (err) {
+        console.error(`[API] Failed to send message to ${to}:`, err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.listen(port, () => {
