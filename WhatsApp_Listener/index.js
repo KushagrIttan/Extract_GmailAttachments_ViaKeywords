@@ -169,7 +169,7 @@ app.post('/api/telegram_approval', async (req, res) => {
         return res.status(500).json({ error: "Telegram Bot not configured." });
     }
     
-    const text = `💬 **New WhatsApp Message**\n👤 *From:* ${senderName}\n📝 *Message:* ${message}\n\n*Choose an AI Draft below, or Reply to this message with your own text:*`;
+    const text = `💬 **New WhatsApp Message**\n👤 *From:* ${senderName}\n📝 *Message:* ${message}\n\n*AI Drafts:*\n1️⃣ ${options[0]}\n2️⃣ ${options[1]}\n3️⃣ ${options[2]}\n\n*Choose an AI Draft below, or Reply to this message with your own text:*`;
     
     try {
         // Build Inline Keyboard
@@ -185,13 +185,6 @@ app.post('/api/telegram_approval', async (req, res) => {
         const tgMsg = await bot.sendMessage(TELEGRAM_CHAT_ID, text, {
             parse_mode: 'Markdown',
             reply_markup: JSON.stringify(keyboard)
-        });
-        
-        // Send a follow up message showing the actual option texts so they can read them
-        const optionsText = `*Option 1:*\n${options[0]}\n\n*Option 2:*\n${options[1]}\n\n*Option 3:*\n${options[2]}`;
-        await bot.sendMessage(TELEGRAM_CHAT_ID, optionsText, {
-            parse_mode: 'Markdown',
-            reply_to_message_id: tgMsg.message_id
         });
         
         // Save to pending approvals
