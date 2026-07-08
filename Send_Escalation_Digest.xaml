@@ -218,7 +218,7 @@
                     <OutArgument x:TypeArguments="x:String">[str_Payload]</OutArgument>
                   </Assign.To>
                   <Assign.Value>
-                    <InArgument x:TypeArguments="x:String">["{""model"":""llama3"",""prompt"":" &amp; Newtonsoft.Json.JsonConvert.SerializeObject(str_Prompt) &amp; ",""stream"":false}"]</InArgument>
+                    <InArgument x:TypeArguments="x:String">["{""model"":""hf.co/bartowski/microsoft_Phi-4-mini-instruct-GGUF:Q4_K_M"",""prompt"":" &amp; Newtonsoft.Json.JsonConvert.SerializeObject(str_Prompt) &amp; ",""stream"":false}"]</InArgument>
                   </Assign.Value>
                 </Assign>
                 <ui:HttpClient ClientCertificate="{x:Null}" ClientCertificatePassword="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" FileAttachments="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" ResponseAttachment="{x:Null}" ResponseHeaders="{x:Null}" SecureClientCertificatePassword="{x:Null}" SecurePassword="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" AuthenticationType="None" Body="[str_Payload]" BodyFormat="application/json" DisplayName="HTTP POST to Ollama" EnableSSLVerification="True" EndPoint="http://localhost:11434/api/generate" sap2010:WorkflowViewState.IdRef="HttpClient_Digest" Method="POST" Result="[str_OllamaResponse]" StatusCode="[int_StatusCode]" TimeoutMS="120000">

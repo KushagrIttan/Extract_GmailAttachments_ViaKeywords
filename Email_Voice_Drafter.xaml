@@ -348,7 +348,7 @@
               <OutArgument x:TypeArguments="x:String">[str_Payload]</OutArgument>
             </Assign.To>
             <Assign.Value>
-              <InArgument x:TypeArguments="x:String">["{""model"":""llama3"",""prompt"":" &amp; Newtonsoft.Json.JsonConvert.SerializeObject(str_LlmPrompt) &amp; ",""stream"":false,""options"":{""num_ctx"":32768}}"]</InArgument>
+              <InArgument x:TypeArguments="x:String">["{""model"":""hf.co/bartowski/microsoft_Phi-4-mini-instruct-GGUF:Q4_K_M"",""prompt"":" &amp; Newtonsoft.Json.JsonConvert.SerializeObject(str_LlmPrompt) &amp; ",""stream"":false,""options"":{""num_ctx"":32768}}"]</InArgument>
             </Assign.Value>
           </Assign>
           <ui:LogMessage DisplayName="Log LLM Request" sap2010:WorkflowViewState.IdRef="LogMessage_LLMReq" Level="Info" Message="[&quot;Sending style-mirroring prompt to Ollama. Payload length: &quot; &amp; str_Payload.Length.ToString &amp; &quot; chars&quot;]" />
