@@ -1,5 +1,5 @@
 {
-  "name": "janpulse-onboarding-ui",
+  "name": "nexus-triage-onboarding-ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,10 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/postprocessing": "^3.0.4",
+    "face-api.js": "^0.22.2",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.23.0",
+    "ogl": "^1.0.11",
+    "postprocessing": "^6.39.2",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
