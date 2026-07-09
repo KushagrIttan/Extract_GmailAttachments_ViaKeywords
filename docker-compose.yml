@@ -1,0 +1,101 @@
+
+services:
+  postgres:
+    image: postgres:15
+    platform: linux/amd64
+    restart: always
+    environment:
+      - POSTGRES_USER=nexustriage
+      - POSTGRES_PASSWORD=nexustriage_secret
+      - POSTGRES_DB=nexustriage
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./supabase/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexustriage"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    platform: linux/amd64
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_URL=http://localhost:8080
+      - DOCKER_ENV=true
+      - CACHE_REDIS_URI=redis://redis:6379
+      - AUTHENTICATION_API_KEY=nexus_evo_secret_key
+      - WEBHOOK_GLOBAL_ENABLED=true
+      - WEBHOOK_GLOBAL_URL=http://n8n:5678/webhook/whatsapp-incoming
+      - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    platform: linux/amd64
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Asia/Kolkata
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=nexustriage
+      - DB_POSTGRESDB_USER=nexustriage
+      - DB_POSTGRESDB_PASSWORD=nexustriage_secret
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nexustriage-api:
+    build:
+      context: ./nexustriage-server
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgresql://nexustriage:nexustriage_secret@postgres:5432/nexustriage
+      - EVOLUTION_API_URL=http://evolution-api:8080
+      - EVOLUTION_API_KEY=nexus_evo_secret_key
+      - N8N_URL=http://n8n:5678
+    depends_on:
+      postgres:
+        condition: service_healthy
+      n8n:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  n8n_data:

@@ -1,0 +1,182 @@
+{
+  "name": "SaaS Master Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution-events",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook - Evolution API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM users WHERE whatsapp_session_id = $1"
+      },
+      "id": "2",
+      "name": "Supabase - Get User",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT keyword FROM keywords WHERE user_id = $1"
+      },
+      "id": "3",
+      "name": "Supabase - Get Keywords",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "llama3-8b-8192"
+            },
+            {
+              "name": "messages",
+              "value": "[{\"role\": \"user\", \"content\": \"Analyze this message for triage: {{ $json.body }}\"}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "Groq API - LLM Triage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "value2": "Escalation"
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "IF - Intent Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO escalations (user_id, sender, message, status) VALUES ($1, $2, $3, 'Pending')"
+      },
+      "id": "6",
+      "name": "Supabase - Insert Escalation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Supabase - Get User\"].json[\"telegram_chat_id\"] }}",
+        "text": "New approval needed: {{ $node[\"Webhook - Evolution API\"].json[\"body\"] }}",
+        "additionalFields": {
+          "replyMarkup": "{\"inline_keyboard\": [[{\"text\": \"Approve\", \"callback_data\": \"approve\"}]]}"
+        }
+      },
+      "id": "7",
+      "name": "Telegram - Send Approval",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1250, 400]
+    }
+  ],
+  "connections": {
+    "Webhook - Evolution API": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get User": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Keywords": {
+      "main": [
+        [
+          {
+            "node": "Groq API - LLM Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq API - LLM Triage": {
+      "main": [
+        [
+          {
+            "node": "IF - Intent Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Insert Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram - Send Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}

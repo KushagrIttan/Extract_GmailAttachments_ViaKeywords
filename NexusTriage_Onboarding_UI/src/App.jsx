@@ -1,25 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import OnboardingWizard from './components/OnboardingWizard';
-import Dither from './components/Dither';
+import Dashboard from './components/Dashboard';
+import AuroraBackground from './components/AuroraBackground';
 import './index.css';
 
 function App() {
+  const [loading, setLoading] = useState(true);
+  const [onboarded, setOnboarded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(cfg => {
+        if (cfg.onboarding_complete === 'true') setOnboarded(true);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner" />
+        <p>Connecting to NexusTriage...</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="bg-layer">
-        <Dither
-          waveSpeed={0.02}
-          waveFrequency={2}
-          waveAmplitude={0.25}
-          waveColor={[0.08, 0.04, 0.14]}
-          colorNum={4}
-          pixelSize={2}
-          disableAnimation={false}
-          enableMouseInteraction={true}
-          mouseRadius={0.8}
-        />
+        <AuroraBackground />
       </div>
-      <OnboardingWizard />
+      {onboarded ? (
+        <Dashboard onReset={() => setOnboarded(false)} />
+      ) : (
+        <OnboardingWizard onComplete={() => setOnboarded(true)} />
+      )}
     </>
   );
 }
