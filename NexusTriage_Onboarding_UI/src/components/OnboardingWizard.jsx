@@ -6,7 +6,7 @@ import {
   Key, Tag, X, Plus, Loader2
 } from 'lucide-react';
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 const transition = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
 const slideUp = {
@@ -25,6 +25,8 @@ export default function OnboardingWizard({ onComplete }) {
     groq_api_key: '',
     telegram_bot_token: '',
     telegram_chat_id: '',
+    google_client_id: '',
+    google_client_secret: '',
   });
   const [keywords, setKeywords] = useState([]);
 
@@ -67,7 +69,7 @@ export default function OnboardingWizard({ onComplete }) {
           NexusTriage
         </div>
         <div className="step-counter">
-          {step <= 5 ? `Step ${step} of 5` : 'Complete'}
+          {step <= 6 ? `Step ${step} of 6` : 'Complete'}
         </div>
       </div>
 
@@ -75,7 +77,7 @@ export default function OnboardingWizard({ onComplete }) {
         <motion.div
           className="progress-fill"
           initial={{ width: '0%' }}
-          animate={{ width: `${(Math.min(step, 5) / 5) * 100}%` }}
+          animate={{ width: `${(Math.min(step, 6) / 6) * 100}%` }}
           transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
         />
       </div>
@@ -84,10 +86,11 @@ export default function OnboardingWizard({ onComplete }) {
         <AnimatePresence mode="wait">
           {step === 1 && <WelcomeStep key="1" onNext={next} />}
           {step === 2 && <ApiKeysStep key="2" onNext={() => { saveConfig(); next(); }} config={config} updateConfig={updateConfig} />}
-          {step === 3 && <KeywordsStep key="3" onNext={next} keywords={keywords} setKeywords={setKeywords} />}
-          {step === 4 && <TelegramStep key="4" onNext={() => { saveConfig(); next(); }} config={config} updateConfig={updateConfig} />}
-          {step === 5 && <WhatsAppStep key="5" onNext={next} />}
-          {step === 6 && <DoneStep key="6" onFinish={finishOnboarding} />}
+          {step === 3 && <GmailStep key="3" onNext={() => { saveConfig(); next(); }} config={config} updateConfig={updateConfig} />}
+          {step === 4 && <KeywordsStep key="4" onNext={next} keywords={keywords} setKeywords={setKeywords} />}
+          {step === 5 && <TelegramStep key="5" onNext={() => { saveConfig(); next(); }} config={config} updateConfig={updateConfig} />}
+          {step === 6 && <WhatsAppStep key="6" onNext={next} />}
+          {step === 7 && <DoneStep key="7" onFinish={finishOnboarding} />}
         </AnimatePresence>
       </div>
 
@@ -153,7 +156,99 @@ function ApiKeysStep({ onNext, config, updateConfig }) {
   );
 }
 
-// ═══ STEP 3 — Keywords ═══
+// ═══ STEP 3 — Gmail Setup ═══
+function GmailStep({ onNext, config, updateConfig }) {
+  const [loading, setLoading] = useState(false);
+  const valid = config.google_client_id.trim().length > 10 && config.google_client_secret.trim().length > 10;
+
+  useEffect(() => {
+    // If we just came back from Google OAuth, check URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      setLoading(true);
+      fetch('/api/gmail/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      }).then(() => {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setLoading(false);
+        onNext();
+      }).catch(() => setLoading(false));
+    }
+  }, [onNext]);
+
+  const handleConnect = async () => {
+    setLoading(true);
+    try {
+      // Save temp config to the server so it can use them in the OAuth callback
+      const redirectUri = window.location.origin + window.location.pathname;
+      const r = await fetch('/api/gmail/auth-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          clientId: config.google_client_id, 
+          clientSecret: config.google_client_secret,
+          redirectUri
+        })
+      });
+      const data = await r.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div className="step-container" {...slideUp}>
+      <div className="service-badge" style={{ background: 'rgba(234,67,53,0.1)', color: '#ea4335' }}>
+        <Mail size={26} strokeWidth={1.8} />
+      </div>
+      <h2 className="step-title">Connect Gmail</h2>
+      <p className="step-desc">
+        We need a Google Cloud OAuth app to read your emails safely. 
+      </p>
+
+      <div className="field">
+        <label>Client ID *</label>
+        <input
+          type="text"
+          placeholder="xxxxx.apps.googleusercontent.com"
+          value={config.google_client_id}
+          onChange={e => updateConfig('google_client_id', e.target.value)}
+        />
+      </div>
+      <div className="field" style={{ marginBottom: 28 }}>
+        <label>Client Secret *</label>
+        <input
+          type="password"
+          placeholder="GOCSPX-..."
+          value={config.google_client_secret}
+          onChange={e => updateConfig('google_client_secret', e.target.value)}
+        />
+        <p className="field-hint">Need help? Create credentials at <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" style={{color: '#ea4335'}}>Google Cloud Console</a>.</p>
+      </div>
+
+      <button
+        className="btn-primary btn-brand"
+        onClick={handleConnect}
+        disabled={!valid || loading}
+        style={{ background: valid ? '#ea4335' : '#525252', cursor: valid && !loading ? 'pointer' : 'not-allowed' }}
+      >
+        {loading ? <Loader2 size={15} className="spin" /> : 'Sign in with Google'}
+      </button>
+      
+      <div style={{ marginTop: 12, textAlign: 'center' }}>
+         <button onClick={onNext} style={{ fontSize: 12, color: '#999', background: 'none', border: 'none', cursor: 'pointer' }}>Skip (already connected)</button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ═══ STEP 4 — Keywords ═══
 function KeywordsStep({ onNext, keywords, setKeywords }) {
   const [input, setInput] = useState('');
   const [saving, setSaving] = useState(false);
@@ -229,7 +324,7 @@ function KeywordsStep({ onNext, keywords, setKeywords }) {
   );
 }
 
-// ═══ STEP 4 — Telegram ═══
+// ═══ STEP 5 — Telegram ═══
 function TelegramStep({ onNext, config, updateConfig }) {
   return (
     <motion.div className="step-container" {...slideUp}>
@@ -273,7 +368,7 @@ function TelegramStep({ onNext, config, updateConfig }) {
   );
 }
 
-// ═══ STEP 5 — WhatsApp ═══
+// ═══ STEP 6 — WhatsApp ═══
 function WhatsAppStep({ onNext }) {
   const [qrData, setQrData] = useState(null);
   const [status, setStatus] = useState('disconnected');
@@ -377,7 +472,7 @@ function WhatsAppStep({ onNext }) {
   );
 }
 
-// ═══ STEP 6 — Done ═══
+// ═══ STEP 7 — Done ═══
 function DoneStep({ onFinish }) {
   return (
     <motion.div className="step-container" style={{ textAlign: 'center' }} {...slideUp}>
@@ -405,10 +500,11 @@ function DoneStep({ onFinish }) {
 const DOCK_ITEMS = [
   { icon: Home, label: 'Welcome', s: 1 },
   { icon: Key, label: 'API Keys', s: 2 },
-  { icon: Tag, label: 'Keywords', s: 3 },
-  { icon: MessageSquare, label: 'Telegram', s: 4 },
-  { icon: Smartphone, label: 'WhatsApp', s: 5 },
-  { icon: Zap, label: 'Done', s: 6 },
+  { icon: Mail, label: 'Gmail', s: 3 },
+  { icon: Tag, label: 'Keywords', s: 4 },
+  { icon: MessageSquare, label: 'Telegram', s: 5 },
+  { icon: Smartphone, label: 'WhatsApp', s: 6 },
+  { icon: Zap, label: 'Done', s: 7 },
 ];
 
 function Dock({ step, setStep }) {

@@ -12,20 +12,31 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [220, 300],
+      "position": [
+        220,
+        300
+      ],
       "webhookId": "trigger-email-scan"
     },
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "minutes", "minutesInterval": 15 }]
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
         }
       },
       "id": "schedule-trigger",
       "name": "Every 15 Minutes",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [220, 500]
+      "position": [
+        220,
+        500
+      ]
     },
     {
       "parameters": {
@@ -37,8 +48,16 @@
       "name": "Get Keywords",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [480, 400],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        480,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     },
     {
       "parameters": {
@@ -50,8 +69,16 @@
       "name": "Get Groq API Key",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [480, 600],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        480,
+        600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     },
     {
       "parameters": {
@@ -62,25 +89,28 @@
       "name": "Loop Keywords",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [720, 400]
+      "position": [
+        720,
+        400
+      ]
     },
     {
       "parameters": {
-        "filters": {
-          "q": "={{ $json.keyword }} in:inbox"
-        },
-        "returnAll": false,
-        "limit": 20,
-        "options": {
-          "format": "resolved"
-        }
+        "method": "POST",
+        "url": "http://nexustriage-api:3001/api/gmail/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": \"{{ $json.keyword }}\"\n}",
+        "options": {}
       },
       "id": "gmail-search",
       "name": "Search Gmail",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [960, 400],
-      "credentials": { "gmailOAuth2": { "id": "2", "name": "Gmail" } }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        400
+      ]
     },
     {
       "parameters": {
@@ -92,19 +122,34 @@
       "name": "Check If Processed",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1200, 400],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        1200,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "condition-not-processed",
               "leftValue": "={{ $json.length }}",
               "rightValue": "0",
-              "operator": { "type": "number", "operation": "equals" }
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -114,7 +159,10 @@
       "name": "If New Email",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1440, 400]
+      "position": [
+        1440,
+        400
+      ]
     },
     {
       "parameters": {
@@ -131,27 +179,38 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an email analysis assistant. Return a JSON object with exactly two keys: 'sentiment' (one of Positive, Negative, Neutral, or Mixed) and 'summary' (a concise 2-3 sentence summary). Return ONLY valid JSON, no markdown.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Analyze this email:\\n\\nSubject: {{ $json.subject }}\\n\\nBody: {{ $json.snippet }}\"\n    }\n  ],\n  \"temperature\": 0.3,\n  \"response_format\": { \"type\": \"json_object\" }\n}",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an email analysis assistant. Return a JSON object with exactly two keys: 'sentiment' (one of Positive, Negative, Neutral, or Mixed) and 'summary' (a concise 2-3 sentence summary). Return ONLY valid JSON, no markdown.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Analyze this email:\\n\\nSubject: {{ $node[\"Search Gmail\"].json.subject }}\\n\\nBody: {{ $node[\"Search Gmail\"].json.body }}\"\n    }\n  ],\n  \"temperature\": 0.3,\n  \"response_format\": { \"type\": \"json_object\" }\n}",
         "options": {}
       },
       "id": "groq-analyze",
       "name": "Groq Analyze Email",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1680, 300]
+      "position": [
+        1680,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO email_results (keyword, sender, subject, sentiment, summary, message_id, has_attachments) VALUES ('{{ $node[\"Loop Keywords\"].json.keyword }}', '{{ $json.from }}', '{{ $json.subject }}', '{{ JSON.parse($node[\"Groq Analyze Email\"].json.choices[0].message.content).sentiment }}', '{{ JSON.parse($node[\"Groq Analyze Email\"].json.choices[0].message.content).summary }}', '{{ $json.id }}', {{ $json.payload && $json.payload.parts ? true : false }}) ON CONFLICT (message_id) DO NOTHING",
+        "query": "=INSERT INTO email_results (keyword, sender, subject, sentiment, summary, message_id, has_attachments) VALUES ('{{ $node[\"Loop Keywords\"].json.keyword }}', '{{ $node[\"Search Gmail\"].json.sender }}', '{{ $node[\"Search Gmail\"].json.subject }}', '{{ JSON.parse($node[\"Groq Analyze Email\"].json.choices[0].message.content).sentiment }}', '{{ JSON.parse($node[\"Groq Analyze Email\"].json.choices[0].message.content).summary }}', '{{ $node[\"Search Gmail\"].json.id }}', false) ON CONFLICT (message_id) DO NOTHING",
         "options": {}
       },
       "id": "save-email-result",
       "name": "Save Email Result",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1920, 300],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        1920,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     },
     {
       "parameters": {
@@ -168,43 +227,56 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a personal email assistant. Draft a professional, friendly reply to the following email. Write ONLY the raw reply body text. Start directly with the greeting. Do not include any meta-commentary.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Draft a reply to:\\n\\nSubject: {{ $json.subject }}\\n\\nBody: {{ $json.snippet }}\"\n    }\n  ],\n  \"temperature\": 0.7\n}",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a personal email assistant. Draft a professional, friendly reply to the following email. Write ONLY the raw reply body text. Start directly with the greeting. Do not include any meta-commentary.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Draft a reply to:\\n\\nSubject: {{ $node[\"Search Gmail\"].json.subject }}\\n\\nBody: {{ $node[\"Search Gmail\"].json.body }}\"\n    }\n  ],\n  \"temperature\": 0.7\n}",
         "options": {}
       },
       "id": "groq-draft",
       "name": "Groq Draft Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2160, 300]
+      "position": [
+        2160,
+        300
+      ]
     },
     {
       "parameters": {
-        "sendTo": "={{ $json.from }}",
-        "subject": "=Re: {{ $json.subject }}",
-        "message": "={{ $node['Groq Draft Reply'].json.choices[0].message.content }}",
-        "options": {
-          "draft": true
-        }
+        "method": "POST",
+        "url": "http://nexustriage-api:3001/api/gmail/draft",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"{{ $node[\"Search Gmail\"].json.sender }}\",\n  \"subject\": \"{{ $node[\"Search Gmail\"].json.subject }}\",\n  \"body\": \"{{ $node[\"Groq Draft Reply\"].json.choices[0].message.content }}\",\n  \"originalMessageId\": \"{{ $node[\"Search Gmail\"].json.id }}\",\n  \"threadId\": \"{{ $node[\"Search Gmail\"].json.threadId }}\"\n}",
+        "options": {}
       },
       "id": "create-gmail-draft",
       "name": "Create Gmail Draft",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [2400, 300],
-      "credentials": { "gmailOAuth2": { "id": "2", "name": "Gmail" } }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO email_drafts (original_subject, original_sender, draft_body) VALUES ('{{ $json.subject }}', '{{ $json.from }}', '{{ $node[\"Groq Draft Reply\"].json.choices[0].message.content }}')",
+        "query": "=INSERT INTO email_drafts (original_subject, original_sender, draft_body) VALUES ('{{ $node[\"Search Gmail\"].json.subject }}', '{{ $node[\"Search Gmail\"].json.sender }}', '{{ $node[\"Groq Draft Reply\"].json.choices[0].message.content }}')",
         "options": {}
       },
       "id": "save-draft",
       "name": "Save Draft to DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [2640, 300],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        2640,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     },
     {
       "parameters": {
@@ -217,19 +289,29 @@
       "name": "WhatsApp Incoming",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [220, 900],
+      "position": [
+        220,
+        900
+      ],
       "webhookId": "whatsapp-incoming"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "is-message",
               "leftValue": "={{ $json.event }}",
               "rightValue": "messages.upsert",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -239,7 +321,10 @@
       "name": "Is Message Event?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [480, 900]
+      "position": [
+        480,
+        900
+      ]
     },
     {
       "parameters": {
@@ -251,8 +336,16 @@
       "name": "Save WA Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [720, 900],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        720,
+        900
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     },
     {
       "parameters": {
@@ -276,7 +369,10 @@
       "name": "Groq Triage WA",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [960, 900]
+      "position": [
+        960,
+        900
+      ]
     },
     {
       "parameters": {
@@ -286,7 +382,10 @@
       "name": "Parse Triage Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1200, 900]
+      "position": [
+        1200,
+        900
+      ]
     },
     {
       "parameters": {
@@ -298,8 +397,16 @@
       "name": "Update WA Triage",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1440, 900],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        1440,
+        900
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     },
     {
       "parameters": {
@@ -310,7 +417,10 @@
               "id": "is-general",
               "leftValue": "={{ $json.intent }}",
               "rightValue": "General",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -320,7 +430,10 @@
       "name": "Is General?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1680, 900]
+      "position": [
+        1680,
+        900
+      ]
     },
     {
       "parameters": {
@@ -336,8 +449,16 @@
       "name": "Telegram Approval",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1920, 800],
-      "credentials": { "telegramApi": { "id": "3", "name": "Telegram" } }
+      "position": [
+        1920,
+        800
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "3",
+          "name": "Telegram"
+        }
+      }
     },
     {
       "parameters": {
@@ -349,22 +470,40 @@
       "name": "Save Escalation",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1920, 1000],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        1920,
+        1000
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "sendMessage",
         "chatId": "={{ $node['Get Telegram Config'].json.chat_id }}",
         "text": "=🚨 *{{ $json.intent }} DETECTED ({{ $json.confidence }}% confidence)*\n👤 From: {{ $json.senderName }}\n📝 Message: {{ $json.messageBody }}\n🧠 Reason: {{ $json.reason }}",
-        "additionalFields": { "parse_mode": "Markdown" }
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "id": "telegram-alert",
       "name": "Telegram Alert",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [2160, 1000],
-      "credentials": { "telegramApi": { "id": "3", "name": "Telegram" } }
+      "position": [
+        2160,
+        1000
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "3",
+          "name": "Telegram"
+        }
+      }
     },
     {
       "parameters": {
@@ -376,85 +515,259 @@
       "name": "Get Telegram Config",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [720, 1100],
-      "credentials": { "postgres": { "id": "1", "name": "NexusTriage DB" } }
+      "position": [
+        720,
+        1100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "NexusTriage DB"
+        }
+      }
     }
   ],
   "connections": {
     "Manual Trigger": {
-      "main": [[ { "node": "Get Keywords", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Get Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Every 15 Minutes": {
-      "main": [[ { "node": "Get Keywords", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Get Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Keywords": {
-      "main": [[ { "node": "Get Groq API Key", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Get Groq API Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Groq API Key": {
-      "main": [[ { "node": "Loop Keywords", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Loop Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Loop Keywords": {
       "main": [
-        [ { "node": "Search Gmail", "type": "main", "index": 0 } ],
+        [
+          {
+            "node": "Search Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Search Gmail": {
-      "main": [[ { "node": "Check If Processed", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Check If Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Check If Processed": {
-      "main": [[ { "node": "If New Email", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "If New Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "If New Email": {
       "main": [
-        [ { "node": "Groq Analyze Email", "type": "main", "index": 0 } ],
+        [
+          {
+            "node": "Groq Analyze Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Groq Analyze Email": {
-      "main": [[ { "node": "Save Email Result", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Save Email Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Save Email Result": {
-      "main": [[ { "node": "Groq Draft Reply", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Groq Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Groq Draft Reply": {
-      "main": [[ { "node": "Create Gmail Draft", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Create Gmail Draft": {
-      "main": [[ { "node": "Save Draft to DB", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Save Draft to DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "WhatsApp Incoming": {
-      "main": [[ { "node": "Is Message Event?", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Is Message Event?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is Message Event?": {
       "main": [
-        [ { "node": "Save WA Message", "type": "main", "index": 0 } ],
+        [
+          {
+            "node": "Save WA Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
     "Save WA Message": {
-      "main": [[ { "node": "Get Telegram Config", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Get Telegram Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Telegram Config": {
-      "main": [[ { "node": "Groq Triage WA", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Groq Triage WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Groq Triage WA": {
-      "main": [[ { "node": "Parse Triage Result", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Parse Triage Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Triage Result": {
-      "main": [[ { "node": "Update WA Triage", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Update WA Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Update WA Triage": {
-      "main": [[ { "node": "Is General?", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Is General?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is General?": {
       "main": [
-        [ { "node": "Telegram Approval", "type": "main", "index": 0 } ],
-        [ { "node": "Save Escalation", "type": "main", "index": 0 } ]
+        [
+          {
+            "node": "Telegram Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Save Escalation": {
-      "main": [[ { "node": "Telegram Alert", "type": "main", "index": 0 } ]]
+      "main": [
+        [
+          {
+            "node": "Telegram Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,

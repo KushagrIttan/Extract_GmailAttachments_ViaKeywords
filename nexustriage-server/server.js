@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const { google } = require('googleapis');
 
 const app = express();
 app.use(cors());
@@ -225,6 +226,115 @@ app.get('/api/stats', async (req, res) => {
       total_drafts: parseInt(drafts.rows[0].count),
       total_keywords: parseInt(keywords.rows[0].count),
     });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ────────────────────────────────────────────
+// GMAIL OAUTH & API
+// ────────────────────────────────────────────
+app.post('/api/gmail/auth-url', async (req, res) => {
+  try {
+    const { clientId, clientSecret, redirectUri } = req.body;
+    await pool.query(`INSERT INTO config (key, value, updated_at) VALUES ('google_client_id', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1`, [clientId]);
+    await pool.query(`INSERT INTO config (key, value, updated_at) VALUES ('google_client_secret', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1`, [clientSecret]);
+    await pool.query(`INSERT INTO config (key, value, updated_at) VALUES ('google_redirect_uri', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1`, [redirectUri]);
+
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',
+      scope: ['https://www.googleapis.com/auth/gmail.modify']
+    });
+    res.json({ url });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/gmail/callback', async (req, res) => {
+  try {
+    const { code } = req.body;
+    const { rows } = await pool.query("SELECT key, value FROM config WHERE key IN ('google_client_id', 'google_client_secret', 'google_redirect_uri')");
+    const cfg = {};
+    rows.forEach(r => cfg[r.key] = r.value);
+    
+    const oauth2Client = new google.auth.OAuth2(cfg.google_client_id, cfg.google_client_secret, cfg.google_redirect_uri);
+    const { tokens } = await oauth2Client.getToken(code);
+    
+    if (tokens.refresh_token) {
+      await pool.query(`INSERT INTO config (key, value, updated_at) VALUES ('google_refresh_token', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1`, [tokens.refresh_token]);
+    }
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/gmail/search', async (req, res) => {
+  try {
+    const { q } = req.body;
+    const { rows } = await pool.query("SELECT key, value FROM config WHERE key IN ('google_client_id', 'google_client_secret', 'google_redirect_uri', 'google_refresh_token')");
+    const cfg = {};
+    rows.forEach(r => cfg[r.key] = r.value);
+
+    const oauth2Client = new google.auth.OAuth2(cfg.google_client_id, cfg.google_client_secret, cfg.google_redirect_uri);
+    oauth2Client.setCredentials({ refresh_token: cfg.google_refresh_token });
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+    const searchRes = await gmail.users.messages.list({ userId: 'me', q: q, maxResults: 10 });
+    const messages = searchRes.data.messages || [];
+    
+    const results = [];
+    for (const msg of messages) {
+      const msgRes = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
+      const payload = msgRes.data.payload;
+      const headers = payload.headers;
+      const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+      const sender = headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
+      const to = headers.find(h => h.name === 'To')?.value || 'Unknown To';
+      
+      let body = '';
+      if (payload.parts) {
+        const textPart = payload.parts.find(p => p.mimeType === 'text/plain');
+        if (textPart && textPart.body && textPart.body.data) {
+          body = Buffer.from(textPart.body.data, 'base64').toString('utf8');
+        }
+      } else if (payload.body && payload.body.data) {
+        body = Buffer.from(payload.body.data, 'base64').toString('utf8');
+      }
+
+      results.push({ id: msg.id, subject, sender, to, body: body.substring(0, 1000), threadId: msgRes.data.threadId });
+    }
+    res.json(results);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/gmail/draft', async (req, res) => {
+  try {
+    const { to, subject, body, originalMessageId, threadId } = req.body;
+    const { rows } = await pool.query("SELECT key, value FROM config WHERE key IN ('google_client_id', 'google_client_secret', 'google_redirect_uri', 'google_refresh_token')");
+    const cfg = {};
+    rows.forEach(r => cfg[r.key] = r.value);
+
+    const oauth2Client = new google.auth.OAuth2(cfg.google_client_id, cfg.google_client_secret, cfg.google_redirect_uri);
+    oauth2Client.setCredentials({ refresh_token: cfg.google_refresh_token });
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+    const messageParts = [
+      `To: ${to}`,
+      `Subject: Re: ${subject}`,
+      '',
+      body,
+    ];
+    const message = messageParts.join('\n');
+    const encodedMessage = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    const draftBody = {
+      message: { raw: encodedMessage }
+    };
+    if (threadId) draftBody.message.threadId = threadId;
+
+    const draftRes = await gmail.users.drafts.create({
+      userId: 'me',
+      requestBody: draftBody
+    });
+    res.json({ success: true, draftId: draftRes.data.id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
