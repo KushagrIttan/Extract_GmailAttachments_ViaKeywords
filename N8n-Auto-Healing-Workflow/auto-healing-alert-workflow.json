@@ -1,0 +1,217 @@
+{
+  "name": "Auto-Healing Alert Mechanism",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e0a0a550-8b1b-4d7a-9f5a-3f7c4f1c1f51",
+      "name": "Start Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 200]
+    },
+    {
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "https://api.github.com/this-endpoint-is-broken-123",
+        "options": {
+          "ignoreResponseCode": true
+        }
+      },
+      "id": "d0a0a550-8b1b-4d7a-9f5a-3f7c4f1c1f52",
+      "name": "Call Broken API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [220, 200],
+      "settings": {
+        "continueOnFail": true
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message }}",
+              "operation": "equal",
+              "value2": "Not Found"
+            }
+          ]
+        }
+      },
+      "id": "c0a0a550-8b1b-4d7a-9f5a-3f7c4f1c1f53",
+      "name": "Check For Failure",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [440, 200]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "title",
+              "value": "API Failure Detected"
+            },
+            {
+              "name": "errorMessage",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "endpoint",
+              "value": "https://api.github.com/this-endpoint-is-broken-123"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now }}"
+            },
+            {
+              "name": "severity",
+              "value": "HIGH"
+            }
+          ],
+          "number": [
+            {
+              "name": "statusCode",
+              "value": "={{ $json.status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b0a0a550-8b1b-4d7a-9f5a-3f7c4f1c1f54",
+      "name": "Extract Error Details",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [660, 200]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "formattedMessage",
+              "value": "={{ '🚨 **API Failure Detected**\\n**Endpoint:** ' + $json.endpoint + '\\n**Error:** ' + $json.errorMessage + '\\n**Status Code:** ' + $json.statusCode + '\\n**Time:** ' + $json.timestamp + '\\n**Action Required:** Immediate investigation needed' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a0a0a550-8b1b-4d7a-9f5a-3f7c4f1c1f55",
+      "name": "Format Alert Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [880, 200]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "YOUR_DISCORD_WEBHOOK_URL_HERE",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{ JSON.stringify({ embeds: [ { title: \"Production Alert\", description: $json.formattedMessage, color: 16711680 } ] }) }}"
+      },
+      "id": "90a0a550-8b1b-4d7a-9f5a-3f7c4f1c1f56",
+      "name": "Send Discord Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "fromEmail": "YOUR_SENDER_EMAIL_HERE",
+        "toEmail": "YOUR_RECEIVER_EMAIL_HERE",
+        "subject": "🚨 Production Alert: API Failure",
+        "text": "={{ $json.formattedMessage }}",
+        "options": {}
+      },
+      "id": "80a0a550-8b1b-4d7a-9f5a-3f7c4f1c1f57",
+      "name": "Send Email Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {},
+      "id": "70a0a550-8b1b-4d7a-9f5a-3f7c4f1c1f58",
+      "name": "Global Error Catcher",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [440, 400]
+    }
+  ],
+  "connections": {
+    "Start Test": {
+      "main": [
+        [
+          {
+            "node": "Call Broken API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Broken API": {
+      "main": [
+        [
+          {
+            "node": "Check For Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check For Failure": {
+      "main": [
+        [
+          {
+            "node": "Extract Error Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Error Details": {
+      "main": [
+        [
+          {
+            "node": "Format Alert Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert Message": {
+      "main": [
+        [
+          {
+            "node": "Send Discord Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Error Catcher": {
+      "main": [
+        [
+          {
+            "node": "Extract Error Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

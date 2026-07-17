@@ -1,0 +1,34 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VEVENT
+DTSTART:20260718T050000Z
+DTEND:20260718T120000Z
+DTSTAMP:20260715T151929Z
+ORGANIZER;CN="You Know, for Search":MAILTO:calendar-invite@lu.ma
+UID:evt-IN1mjc5721CNrDT@events.lu.ma
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=kusha
+ grpc@gmail.com;X-NUM-GUESTS=0:mailto:kushagrpc@gmail.com
+SUMMARY:Developer Hackathon: Build AI Agents with Elastic & Google Cloud
+DESCRIPTION:Get up-to-date information at: https://luma.com/xmn74jyd?pk=g-
+ B0MkWbfGonx4CAO\n\nAddress:\nThoughtWorks Technologies\nThoughtworks Techn
+ ologies India Pvt. Ltd.\n6th Floor, International Tech Park,\nSector 59, G
+ urugram\nGurugram, India\n\nJoin Elastic and Google Cloud for an evening o
+ f building.\nThis is a developer-focused hacknight where you’ll have fou
+ r hours to turn an idea into something working. No presentations. No lengt
+ hy demos. No step-by-step instructions.\nJust a room full of developers, a
+  problem worth solving, and time to build.\nWhether you’re exploring AI 
+ agents for the first time or already shipping production applications, thi
+ s is a chance to experiment, learn from other builders, and leave with som
+ ething you’ve actually created.\nWhat you’ll do\nBuild an AI-powered a
+ pplication or agent using Elastic and Google…\n\nHosted by Kartikay Shar
+ ma & Som
+LOCATION:ThoughtWorks Technologies, International Tech Park, Sector 59, Gu
+ rugram, Haryana 122011, India
+GEO:28.4073057;77.11876319999999
+SEQUENCE:206291969
+STATUS:CONFIRMED
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,52 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//sebbo.net//ical-generator//EN
+METHOD:REQUEST
+BEGIN:VEVENT
+UID:beea45a8-1a73-49d7-b8f3-661a705eab1d
+SEQUENCE:0
+DTSTAMP:20260713T204134Z
+DTSTART:20260718T050000Z
+DTEND:20260718T120000Z
+SUMMARY:Developer Hacknight: Build AI Agents with Elastic & Google Cloud
+LOCATION:Diplomatic Enclave Chanakyapuri\, New Delhi
+DESCRIPTION:**NOTE:** Access to this meetup is restricted. Please ensure [
+ you register on Luma.](https://luma.com/xmn74jyd?utm_campaign=meetup&amp\;
+ utm_medium=announcement&amp\;utm_source=usergroups)\n\nJoin Elastic and Go
+ ogle Cloud for an evening of building. ​\n\nThis is a developer-focused 
+ hacknight where you’ll have four hours to turn an idea into something wo
+ rking. No presentations. No lengthy demos. No step-by-step instructions. 
+ ​\n\nJust a room full of developers\, a problem worth solving\, and time
+  to build. ​\n\nWhether you’re exploring AI agents for the first time 
+ or already shipping production applications\, this is a chance to experime
+ nt\, learn from other builders\, and leave with something you’ve actuall
+ y created. ​\n\n**Venue**\nTo be announced soon\n\n**What you’ll do** 
+ ​\nBuild an AI-powered application or agent using Elastic and Google Clo
+ ud. ​\nYou can: ​\n\n* Start with a fresh idea\n* ​Improve an existi
+ ng project ​\n* Work on a personal side project ​\n* Team up with othe
+ r developers at the event ​\n\nThe goal is simple: build something and d
+ emo it before the night ends. ​\n\n**What to expect ​**\n\n* 4 hours o
+ f uninterrupted building time ​\n* Access to Elastic and Google Cloud ex
+ perts ​\n* A room full of developers solving interesting problems\n* ​
+ Live demos at the end of the evening ​\n* Prizes for selected projects\n
+ \n​How it works ​\n\n* Arrive with an idea\, or discover one at the ev
+ ent ​\n* Build solo or form a team ​\n* Use Elastic and Google Cloud t
+ o bring your project to life ​\n* Demo what you’ve built before the ev
+ ent wraps up ​\n* Projects will be evaluated on what you build\, not how
+  large your team is ​\n\nWho should attend ​\nThis event is for develo
+ pers\, engineers\, builders\, and technical creators. ​\n\nYou don’t n
+ eed to be an Elastic expert to participate. If you’re comfortable writin
+ g code and interested in building AI-powered applications\, you’ll fit r
+ ight in. ​\n\n**What to bring ​**\n\n* Your laptop ​\n* Your charger
+  ​\n* An idea you’re excited to build ​\n\nWe’ll provide the space
+ \, infrastructure\, and support. ​\n\nYou bring the code. ​See you in 
+ New Delhi!\n\n**NOTE:** Access to this meetup is restricted. Please ensure
+ [ you register on Luma.](https://luma.com/xmn74jyd?utm_campaign=meetup&amp
+ \;utm_medium=announcement&amp\;utm_source=usergroups)
+ORGANIZER;CN="Meetup Reminder":mailto:info@meetup.com
+URL;VALUE=URI:https://www.meetup.com/delhi-elastic-fantastics/events/31556
+ 8452/
+STATUS:CONFIRMED
+CLASS:PUBLIC
+END:VEVENT
+END:VCALENDAR

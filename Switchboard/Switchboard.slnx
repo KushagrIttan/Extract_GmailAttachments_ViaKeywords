@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Switchboard.Api/Switchboard.Api.csproj" />
+  <Project Path="Switchboard.AppHost/Switchboard.AppHost.csproj" />
+  <Project Path="Switchboard.ServiceDefaults/Switchboard.ServiceDefaults.csproj" />
+</Solution>

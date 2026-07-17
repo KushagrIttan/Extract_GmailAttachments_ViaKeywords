@@ -1,0 +1,4 @@
+FROM hf.co/bartowski/microsoft_Phi-4-mini-instruct-GGUF:Q4_K_M
+TEMPLATE """{{ if .System }}<|system|>{{ .System }}{{ if .Tools }}<|tool|>{{ .Tools }}<|/tool|>{{ end }}<|end|>{{ end }}{{ if .Prompt }}<|user|>{{ .Prompt }}<|end|>{{ end }}<|assistant|>{{ .Response }}{{ if .ToolCalls }}<|tool_call|>[{{ range .ToolCalls }}{"name":"{{ .Function.Name }}","arguments":{{ .Function.Arguments }}}{{ end }}]<|/tool_call|>{{ end }}"""
+PARAMETER stop "<|end|>"
+PARAMETER num_ctx 8192

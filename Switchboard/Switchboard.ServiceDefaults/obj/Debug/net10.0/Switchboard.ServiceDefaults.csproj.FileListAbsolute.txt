@@ -1,0 +1,13 @@
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\bin\Debug\net10.0\Switchboard.ServiceDefaults.deps.json
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\bin\Debug\net10.0\Switchboard.ServiceDefaults.dll
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\bin\Debug\net10.0\Switchboard.ServiceDefaults.pdb
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\Switchboard.ServiceDefaults.csproj.AssemblyReference.cache
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\Switchboard.ServiceDefaults.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\Switchboard.ServiceDefaults.AssemblyInfoInputs.cache
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\Switchboard.ServiceDefaults.AssemblyInfo.cs
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\Switchboard.ServiceDefaults.csproj.CoreCompileInputs.cache
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\Switchboard.ServiceDefaults.sourcelink.json
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\Switchboard.ServiceDefaults.dll
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\refint\Switchboard.ServiceDefaults.dll
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\Switchboard.ServiceDefaults.pdb
+C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.ServiceDefaults\obj\Debug\net10.0\ref\Switchboard.ServiceDefaults.dll
