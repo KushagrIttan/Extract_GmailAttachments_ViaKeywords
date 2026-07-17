@@ -25,7 +25,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Switchboard.AppHost")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cdebd9387201d0e3daf3eecaa0cd37cfde3c86d3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+122661433ed39a6696a5cd3e26998b32e7254111")]
 [assembly: System.Reflection.AssemblyProductAttribute("Switchboard.AppHost")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Switchboard.AppHost")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

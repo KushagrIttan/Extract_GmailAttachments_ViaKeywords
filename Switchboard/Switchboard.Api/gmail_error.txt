@@ -14,6 +14,7 @@ System.Net.Http.HttpRequestException: No connection could be made because the ta
    at System.Net.Http.Metrics.MetricsHandler.SendAsyncWithMetrics(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
    at System.Net.Http.DiagnosticsHandler.SendAsyncCore(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
    at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.SocketsHttpHandler.<SendAsync>g__CreateHandlerAndSendAsync|115_0(HttpRequestMessage request, CancellationToken cancellationToken)
    at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
    at Microsoft.Extensions.AI.OllamaChatClient.GetResponseAsync(IEnumerable`1 messages, ChatOptions options, CancellationToken cancellationToken)
    at Switchboard.Api.Agents.DraftingAgent.DraftReplyAsync(String emailBody) in C:\Users\Kushagr\Documents\UiPath\Extract_GmailAttachments_ViaKeywords\Switchboard\Switchboard.Api\Agents\DraftingAgent.cs:line 22

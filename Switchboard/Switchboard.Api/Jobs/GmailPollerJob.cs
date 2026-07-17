@@ -186,6 +186,18 @@ public class GmailPollerJob
                         };
                         await service.Users.Drafts.Create(draft, "me").ExecuteAsync();
 
+                        var emailDraft = new EmailDraft
+                        {
+                            ThreadId = msg.ThreadId,
+                            OriginalMessageId = msg.Id,
+                            Recipient = toHeader,
+                            Subject = subjectHeader,
+                            DraftBody = draftReply,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _db.EmailDrafts.Add(emailDraft);
+                        await _db.SaveChangesAsync();
+
                         var attachLogText = attachments.Any() ? $" Extracted {attachments.Count} attachment(s) [{string.Join(", ", attachments)}]." : " No attachments found.";
                         await _hub.Clients.All.SendAsync("ReceiveLog", new
                         {
