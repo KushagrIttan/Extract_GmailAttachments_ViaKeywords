@@ -8,7 +8,9 @@ var switchboardDb = postgresServer.AddDatabase("switchboard");
 var api = builder.AddProject<Projects.Switchboard_Api>("api")
                  .WithReference(switchboardDb)
                  .WithEnvironment("ConnectionStrings__chatModel", "http://localhost:11434")
-                 .WaitFor(switchboardDb);
+                 .WaitFor(switchboardDb)
+                 .WithHttpEndpoint(port: 5000, name: "http")
+                 .WithHttpsEndpoint(port: 5001, name: "https");
 
 var evolutionApi = builder.AddContainer("evolution-api", "evoapicloud/evolution-api")
                           .WithImageTag("v2.1.1")
@@ -29,7 +31,7 @@ api.WithReference(evolutionApi.GetEndpoint("http"))
 var ui = builder.AddNpmApp("ui", "../Switchboard.UI", "dev")
                 .WithReference(api)
                 .WaitFor(api)
-                .WithHttpEndpoint(env: "PORT", targetPort: 5173)
+                .WithHttpEndpoint(env: "PORT", port: 3000, targetPort: 5173)
                 .WithExternalHttpEndpoints();
 
 builder.Build().Run();

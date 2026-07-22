@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Switchboard.ServiceDefaults")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+122661433ed39a6696a5cd3e26998b32e7254111")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+28afa2da7c514360de27b0829ce12cb272bc19de")]
 [assembly: System.Reflection.AssemblyProductAttribute("Switchboard.ServiceDefaults")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Switchboard.ServiceDefaults")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

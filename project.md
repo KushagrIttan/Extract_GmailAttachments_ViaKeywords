@@ -1,72 +1,80 @@
-# Switchboard: Autonomous AI Communication Triage System
+# Switchboard 🎛️
 
-## 📌 Project Overview & Use Case
+Switchboard is an intelligent, multi-channel communication triage and lead-generation hub. It monitors your inbound communication channels (Gmail, WhatsApp, and LinkedIn), uses local AI to classify and draft responses, pushes escalations to a Telegram Bot for human-in-the-loop approval, and automatically logs lead data into Google Sheets.
 
-Switchboard is an intelligent, multi-channel communication hub designed to manage, triage, and draft responses for incoming messages across **Gmail** and **WhatsApp**. It acts as a personal AI assistant that filters out the noise, processes important information, and delegates critical decision-making to you via **Telegram**.
+## Architecture Overview
 
-### The Core Problem it Solves
-Managing a high volume of emails and WhatsApp messages is overwhelming. Often, you only care about emails containing specific keywords (e.g., invoices, job applications, project updates) or you want to quickly reply to WhatsApp messages without having to type out long responses or open the WhatsApp app.
+The system is built as a monolith utilizing **.NET Aspire** for orchestration. It consists of:
+1. **Switchboard.Api**: An ASP.NET Core 10 backend running background workers, AI Agents, and HTTP endpoints.
+2. **Switchboard.UI**: A React + Vite frontend for configuration, live monitoring, and analytics.
+3. **Switchboard.AppHost**: The Aspire orchestrator that spins up the API, UI, a PostgreSQL database container, and an Ollama container.
 
-### The Switchboard Solution
-1. **Gmail Auto-Triage**: It silently watches your inbox for specific keywords. When a match is found, it automatically downloads the attachments to your local machine and uses a local AI model to draft a context-aware reply in your Gmail drafts.
-2. **WhatsApp AI Proxy**: Instead of dealing with WhatsApp directly, all incoming messages are intercepted. The AI analyzes the intent of the message and generates 3 perfect reply options. These are forwarded to you on Telegram. You simply tap an option in Telegram, and the AI replies on WhatsApp on your behalf.
-
----
-
-## 🏗️ Architecture & Codebase Structure
-
-The project is built using a modern .NET ecosystem with a React frontend, orchestrated by **.NET Aspire**.
-
-### 1. Backend (`Switchboard.Api`)
-An ASP.NET Core API that serves as the brain of the operation.
-- **Agents (`/Agents`)**: 
-  - `TriageAgent.cs`: The core AI brain. Evaluates incoming WhatsApp messages, determines intent, and generates 3 reply options. Uses `Microsoft.Extensions.AI` to talk to a local Ollama model.
-  - `DraftingAgent.cs`: Generates email draft responses.
-- **Jobs (`/Jobs`)**: 
-  - `GmailPollerJob.cs`: A background Cron job (using Hangfire) that polls the Gmail API, checks for keyword matches, downloads attachments to a local `DownloadedAttachments` folder, and creates Drafts.
-- **Endpoints (`/Endpoints`)**: 
-  - `WebhookEndpoints.cs`: Receives instant HTTP Webhook `POST` requests from Green API whenever a new WhatsApp message arrives.
-  - `ConfigEndpoints.cs` & `KeywordEndpoints.cs`: REST endpoints for the frontend UI to save API keys and manage keywords.
-  - `StatsEndpoints.cs`: Powers the frontend dashboard metrics.
-- **Workers (`/Workers`)**: 
-  - `TelegramListenerWorker.cs`: A background service that maintains a persistent connection to the Telegram Bot API. It listens for your button clicks (when you choose an AI-generated reply) and fires the selected text back to WhatsApp via Green API.
-- **Data & Models (`/Data`, `/Models`)**: Entity Framework Core SQLite database context and schemas (`Escalations`, `EmailDrafts`, `WaMessages`, `Configs`).
-
-### 2. Frontend (`Switchboard.UI`)
-A **React + Vite** dashboard built with modern, glassmorphic UI principles.
-- **Real-time Sync**: Connects to the backend via SignalR (`ActivityHub.cs`) to display live logs of exactly what the AI is doing in the background.
-- **Configuration**: An Onboarding screen that allows you to securely input and persist your API Keys (Telegram, Gmail OAuth, Green API).
-
-### 3. Orchestration (`Switchboard.AppHost`)
-Uses **.NET Aspire** to seamlessly boot up the backend API and the frontend UI together, providing built-in telemetry and a unified startup experience.
+### Core Technologies
+- **Backend**: C#, ASP.NET Core, Entity Framework Core, SignalR (WebSockets), Hangfire (Background Jobs), Microsoft.Extensions.AI (Abstractions).
+- **Frontend**: React, Vite, TypeScript, Vanilla CSS (Glassmorphic UI).
+- **Database**: PostgreSQL (pgvector available for future embeddings).
+- **LLM**: Ollama (`phi-4-mini`) running locally, with Groq cloud fallback for heavy tasks.
 
 ---
 
-## ⚙️ How It Works (The Workflows)
+## The Agents
 
-### Workflow A: The WhatsApp Pipeline
-1. **Incoming Message**: Someone texts your WhatsApp number.
-2. **Webhook**: Green API intercepts this and sends an HTTP POST request to `WebhookEndpoints.cs` (exposed via Ngrok).
-3. **AI Evaluation**: `TriageAgent.cs` receives the message text. It completely ignores keywords and asks the local Ollama AI (`Phi-4-mini`) to determine the user's intent and generate 3 possible responses based on your configured voice/tone.
-4. **Escalation**: The agent creates an `Escalation` in the database and sends a message to your Telegram Bot containing the sender's name/number, the message, and 3 inline buttons.
-5. **Resolution**: You read the message on Telegram and tap "Option 2".
-6. **Execution**: `TelegramListenerWorker.cs` catches the callback, reads the text of Option 2, and fires an HTTP POST request to Green API, which sends the message back to the original WhatsApp sender.
+The system leverages AI Agents to process incoming text. 
 
-### Workflow B: The Gmail Pipeline
-1. **Polling**: `GmailPollerJob.cs` wakes up on a schedule.
-2. **Filtering**: It queries the Gmail API specifically for unread emails containing your pre-configured keywords (e.g., `"Invoice" OR "Resume"`).
-3. **Extraction**: If found, it parses the email structure and extracts any Base64 encoded attachments, saving them to the root `DownloadedAttachments` directory.
-4. **Drafting**: It passes the email text to `DraftingAgent.cs`, which generates a reply.
-5. **Saving**: A draft is created directly in your Gmail account, and the UI Live Feed is updated with the names of the attachments that were saved.
+### 1. `TriageAgent.cs` (WhatsApp & Gmail)
+- **WhatsApp**: Evaluates incoming messages using `phi-4-mini`, determines the intent, and generates 3 distinct, context-aware reply options. It cleans up any AI hallucinated prefixes (like "Option 1:") and passes the options to Telegram.
+- **Gmail**: Skips the LLM verification entirely because the Gmail API's search query (`"is:unread AND (keyword OR keyword)"`) guarantees a match. It simply marks the email for escalation and triggers the `DraftingAgent`.
+
+### 2. `LinkedInTriageAgent.cs`
+- Operates exactly like the WhatsApp Triage Agent, but tailored for LinkedIn threads. It analyzes the last 6 messages in a conversation to determine context and generates 3 reply options.
+
+### 3. `DraftingAgent.cs`
+- Uses the larger, cloud-hosted **Groq API** (`llama-3.3-70b-versatile`) to generate high-quality, professional email drafts based on the matched keywords.
 
 ---
 
-## 🛠️ Required Context for Setup
+## Background Workers
 
-- **Ngrok**: Green API requires a public URL to send webhooks. You must run `ngrok http https://localhost:7247` and paste the resulting URL + `/api/webhooks/whatsapp` into the Green API console.
-- **Local AI (Ollama)**: The system relies on a locally running instance of Ollama to ensure complete privacy of your communications. It is currently configured to use `hf.co/bartowski/microsoft_Phi-4-mini-instruct-GGUF:Q4_K_M`.
-- **API Keys**: All keys (Green API Instance ID/Token, Telegram Bot Token, Gmail Client ID/Secret) are stored in the local SQLite database via the `/api/config` endpoints and managed through the UI's "Reconfigure System" button.
+The application uses `IHostedService` Background Workers to continuously poll APIs that do not support webhooks.
+
+### 1. `GmailPollerJob.cs` (Hangfire)
+- Connects to Gmail via OAuth2 using a stored Refresh Token.
+- Queries unread messages matching your specific keywords.
+- Downloads attachments to the local `/DownloadedAttachments` directory.
+- Triggers the `TriageAgent` and `DraftingAgent`.
+- Creates a Draft directly in your Gmail account.
+
+### 2. `LinkedInWatcherWorker.cs` (BackgroundService)
+- Uses **Playwright** (headless Chromium) to scrape your LinkedIn messages via your `li_at` session cookie.
+- Runs every 30 minutes to find unreplied threads.
+- Triggers the `LinkedInTriageAgent` and sends options to Telegram.
+- **Security Note**: It intentionally *never* sends messages automatically to prevent LinkedIn account bans.
+
+### 3. `TelegramListenerWorker.cs` (BackgroundService)
+- Connects to the Telegram Bot API using Long Polling.
+- Listens for inline button clicks (Callback Queries).
+- **Routing**:
+  - `WA|<id>|<option>`: Sends the selected WhatsApp reply via Green API.
+  - `LI|<id>|<option>`: Marks the LinkedIn escalation as "Approved" so you can manually copy-paste it from the dashboard.
+- Syncs the contact data to the Lead Pipeline.
+
+### 4. `GoogleSheetsSyncWorker.cs` (BackgroundService)
+- Periodically pushes any new or updated `Leads` from the PostgreSQL database directly into your connected Google Sheet.
 
 ---
 
-*This document serves as the architectural source of truth for the Switchboard project.*
+## User Interface (UI)
+
+The frontend is a React SPA (Single Page Application) that communicates with the API via standard HTTP calls and SignalR.
+- **Onboarding (`Onboarding.tsx`)**: Walks you through connecting your API tokens and OAuth accounts (Gmail, Google Sheets, WhatsApp Green API, Telegram, and LinkedIn).
+- **Dashboard (`Dashboard.tsx`)**: Displays live analytics, pending escalations, and the manual-send queue for LinkedIn.
+- **Live Activity Feed**: Powered by SignalR (`ActivityHub.cs`), this terminal-style feed shows real-time logs from the AI Agents and Background Workers as they process data.
+
+## Running the Project
+
+To start the entire stack:
+1. Ensure Docker Desktop is running.
+2. Run `dotnet run --project Switchboard\Switchboard.AppHost`
+3. Aspire will start the database, Ollama, the API on `http://localhost:5000`, and the UI on `http://localhost:3000`.
+
+*Note: For Google OAuth to work properly, you must have `http://localhost:5000` registered in your Google Cloud Console as an Authorized Redirect URI.*

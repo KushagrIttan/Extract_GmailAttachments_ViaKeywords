@@ -1,22 +1,34 @@
 {
-  "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
-  "entryPoints": [
-    {
-      "filePath": "Main.xaml",
-      "uniqueId": "5b719029-de9c-47ab-97a7-ec8ee9faaf02",
-      "type": "process",
-      "input": {
-        "type": "object",
-        "properties": {
-          "in_ExcelPath": {
-            "type": "string"
-          },
-          "in_AttachmentRoot": {
-            "type": "string"
-          }
-        },
-        "required": []
-      }
-    }
+  "backend": {
+    "path": "Switchboard/Switchboard.Api/Program.cs",
+    "description": "ASP.NET Core 10 API — Switchboard communication hub",
+    "entry_point": "Switchboard.Api.Program::Main",
+    "framework": "net10.0"
+  },
+  "frontend": {
+    "path": "Switchboard/Switchboard.UI/src/App.tsx",
+    "description": "React + Vite + TypeScript dashboard",
+    "entry_point": "src/main.tsx"
+  },
+  "aspirator": {
+    "path": "Switchboard/Switchboard.AppHost/Program.cs",
+    "description": ".NET Aspire orchestrator (PostgreSQL, Ollama)",
+    "entry_point": "Switchboard.AppHost.Program::Main"
+  },
+  "workers": [
+    "Switchboard/Switchboard.Api/Workers/TelegramListenerWorker.cs",
+    "Switchboard/Switchboard.Api/Workers/LinkedInWatcherWorker.cs"
+  ],
+  "jobs": [
+    "Switchboard/Switchboard.Api/Jobs/GmailPollerJob.cs",
+    "Switchboard/Switchboard.Api/Jobs/DigestCronJob.cs",
+    "Switchboard/Switchboard.Api/Jobs/CorpusBuilderJob.cs",
+    "Switchboard/Switchboard.Api/Jobs/SheetsSyncJob.cs"
+  ],
+  "agents": [
+    "Switchboard/Switchboard.Api/Agents/TriageAgent.cs",
+    "Switchboard/Switchboard.Api/Agents/DraftingAgent.cs",
+    "Switchboard/Switchboard.Api/Agents/LinkedInTriageAgent.cs",
+    "Switchboard/Switchboard.Api/Agents/DigestAgent.cs"
   ]
 }

@@ -84,6 +84,13 @@ You must reply with ONLY a valid JSON object matching this schema. DO NOT includ
             result = JsonSerializer.Deserialize<WaProcessResult>(rawText.Trim()) ?? new WaProcessResult();
             if (result.replyOptions == null || result.replyOptions.Length == 0)
                 result.replyOptions = new[] { "I received this." };
+            else
+            {
+                for (int i = 0; i < result.replyOptions.Length; i++)
+                {
+                    result.replyOptions[i] = System.Text.RegularExpressions.Regex.Replace(result.replyOptions[i], @"^(?:Option\s*\d+:|\d+\.)\s*", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+                }
+            }
         }
         catch
         {

@@ -28,6 +28,8 @@ public class TelegramListenerWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        ITelegramBotClient? activeBotClient = null;
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -38,34 +40,41 @@ public class TelegramListenerWorker : BackgroundService
                 var tokenConfig = await db.Configs.FirstOrDefaultAsync(c => c.Key == "telegramToken", stoppingToken);
                 if (tokenConfig != null && !string.IsNullOrEmpty(tokenConfig.Value))
                 {
-                    _logger.LogInformation("Starting Telegram Bot listener...");
-                    var botClient = new TelegramBotClient(tokenConfig.Value);
-                    
-                    var receiverOptions = new ReceiverOptions
+                    if (activeBotClient == null)
                     {
-                        AllowedUpdates = { } // receive all update types
-                    };
+                        _logger.LogInformation("Starting Telegram Bot listener...");
+                        var botClient = new TelegramBotClient(tokenConfig.Value);
+                        activeBotClient = botClient;
+                        
+                        var receiverOptions = new ReceiverOptions
+                        {
+                            AllowedUpdates = { }
+                        };
 
-                    botClient.StartReceiving(
-                        HandleUpdateAsync,
-                        HandleErrorAsync,
-                        receiverOptions,
-                        cancellationToken: stoppingToken
-                    );
-                    
-                    // Stay alive until cancelled
-                    await Task.Delay(Timeout.Infinite, stoppingToken);
+                        botClient.StartReceiving(
+                            HandleUpdateAsync,
+                            HandleErrorAsync,
+                            receiverOptions,
+                            cancellationToken: stoppingToken
+                        );
+                        
+                        _logger.LogInformation("Telegram Bot listener started.");
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
                 }
                 else
                 {
-                    _logger.LogInformation("No Telegram Token found. Retrying in 10 seconds.");
-                    await Task.Delay(10000, stoppingToken);
+                    activeBotClient = null;
+                    _logger.LogInformation("No Telegram Token found. Retrying in 30 seconds.");
+                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
                 }
             }
             catch (TaskCanceledException) { }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in Telegram Listener loop");
+                activeBotClient = null;
                 await Task.Delay(10000, stoppingToken);
             }
         }
@@ -123,7 +132,85 @@ public class TelegramListenerWorker : BackgroundService
 
     private async Task HandleCallbackQueryAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
     {
-        if (callbackQuery.Data == null || !callbackQuery.Data.StartsWith("WA|")) return;
+        if (callbackQuery.Data == null) return;
+
+        if (callbackQuery.Data.StartsWith("WA|"))
+        {
+            await HandleWhatsAppCallbackAsync(botClient, callbackQuery, cancellationToken);
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("LI|"))
+        {
+            await HandleLinkedInCallbackAsync(botClient, callbackQuery, cancellationToken);
+            return;
+        }
+    }
+
+    /// <summary>
+    /// LinkedIn callback handler: marks escalation as "Approved" and surfaces the reply text.
+    /// INTENTIONALLY does NOT auto-send via Playwright — see LinkedInWatcherWorker.cs for rationale.
+    /// The user must manually copy-paste the approved reply into their LinkedIn browser.
+    /// </summary>
+    private async Task HandleLinkedInCallbackAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    {
+        var parts = callbackQuery.Data!.Split('|');
+        if (parts.Length != 3) return;
+
+        int escId = int.Parse(parts[1]);
+        int optionIndex = int.Parse(parts[2]);
+
+        using var scope = _serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SwitchboardDbContext>();
+
+        var esc = await db.Escalations.FindAsync(escId);
+        if (esc == null) return;
+
+        try
+        {
+            var payload = System.Text.Json.JsonDocument.Parse(esc.FullMessagePayload);
+            var options = payload.RootElement.GetProperty("options");
+            var selectedText = options[optionIndex].GetString() ?? "";
+            
+            // Clean up any "Option X:" prefixes
+            selectedText = System.Text.RegularExpressions.Regex.Replace(selectedText, @"^(Option \d+:|Option\s\d+\s*-|Option\s\d+\.)\s*", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+
+            var threadUrl = esc.ThreadUrl ?? "https://www.linkedin.com/messaging/";
+
+            // Mark as Approved — NOT Resolved. This goes into the manual-send queue on the dashboard.
+            esc.Status = "Approved";
+            esc.ResolvedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+
+            // Show the approved reply text so the user can copy it
+            await botClient.EditMessageText(
+                chatId: callbackQuery.Message.Chat.Id,
+                messageId: callbackQuery.Message.MessageId,
+                text: callbackQuery.Message.Text + $"\n\n✅ APPROVED (manual send required)\n\n📋 Copy this reply:\n\"{selectedText}\"\n\n🔗 Thread: {threadUrl}",
+                replyMarkup: null,
+                cancellationToken: cancellationToken
+            );
+
+            await botClient.AnswerCallbackQuery(callbackQuery.Id, "Reply approved! Copy-paste it in LinkedIn.", cancellationToken: cancellationToken);
+
+            var hub = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<Switchboard.Api.Hubs.ActivityHub>>();
+            await hub.Clients.All.SendAsync("ReceiveLog", new
+            {
+                id = Guid.NewGuid().ToString(),
+                time = DateTime.UtcNow.ToString("HH:mm:ss"),
+                source = "LinkedIn",
+                message = $"✅ Reply approved for LinkedIn. Manual send required."
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process LinkedIn callback");
+            await botClient.AnswerCallbackQuery(callbackQuery.Id, "Failed to approve.", showAlert: true, cancellationToken: cancellationToken);
+        }
+    }
+
+    private async Task HandleWhatsAppCallbackAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    {
         
         var parts = callbackQuery.Data.Split('|');
         if (parts.Length != 3) return;

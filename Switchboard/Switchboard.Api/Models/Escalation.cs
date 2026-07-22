@@ -16,7 +16,18 @@ public class Escalation
     
     public string FullMessagePayload { get; set; } = string.Empty; // JSON
     
-    public string Status { get; set; } = "Pending"; // Pending, Resolved
+    public string Status { get; set; } = "Pending"; // Pending, Resolved, Approved
+    
+    /// <summary>
+    /// Discriminator for which channel this escalation belongs to (WhatsApp, Gmail, LinkedIn).
+    /// Defaults from Source for backwards compatibility with existing data.
+    /// </summary>
+    public string? Channel { get; set; }
+    
+    /// <summary>
+    /// For LinkedIn approved escalations: the URL to the LinkedIn thread for manual send.
+    /// </summary>
+    public string? ThreadUrl { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ResolvedAt { get; set; }

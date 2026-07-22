@@ -20,6 +20,8 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
   const [waQrCode, setWaQrCode] = useState<string | null>(null);
   const [waLoading, setWaLoading] = useState(false);
   const [waError, setWaError] = useState<string | null>(null);
+  const [sheetsConnected, setSheetsConnected] = useState(false);
+  const [sheetsSheetName, setSheetsSheetName] = useState<string | null>(null);
   const [gmailConnected, setGmailConnected] = useState(false);
 
   useEffect(() => {
@@ -34,7 +36,14 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
         greenApiToken: data.greenApiToken || prev.greenApiToken
       }));
       if (data.GmailRefreshToken) setGmailConnected(true);
+      if (data.SheetsRefreshToken) setSheetsConnected(true);
+      if (data.SheetsTabName) setSheetsSheetName(data.SheetsTabName);
     });
+
+    // Load Google Picker API script
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    document.body.appendChild(script);
   }, []);
 
   const handleCredChange = (field: string, value: string) => {
@@ -76,7 +85,6 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
       return;
     }
     
-    // Save creds via the configure endpoint
     await fetch('/api/integrations/gmail/configure', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -84,7 +92,6 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
     });
 
     const popup = window.open('/api/integrations/gmail/auth', '_blank', 'width=500,height=400');
-    // Poll for popup close to update UI
     const timer = setInterval(() => {
       if (popup && popup.closed) {
         clearInterval(timer);
@@ -93,15 +100,74 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
     }, 500);
   };
 
+  const startSheetsAuth = async () => {
+    if (!gmailConnected) {
+      alert("Please configure Gmail OAuth first to reuse the credentials.");
+      return;
+    }
+
+    const popup = window.open('/api/integrations/sheets/auth', '_blank', 'width=500,height=500');
+    const timer = setInterval(() => {
+      if (popup && popup.closed) {
+        clearInterval(timer);
+        setSheetsConnected(true);
+      }
+    }, 500);
+  };
+
+  const openGooglePicker = () => {
+    const spreadsheetId = prompt("Please enter your Google Spreadsheet ID (found in the URL between /d/ and /edit):");
+    if (!spreadsheetId) return;
+
+    const tabName = prompt("Enter the exact tab name in the sheet (e.g. 'Leads' or 'Sheet1'):", "Sheet1") || "Sheet1";
+    
+    fetch('/api/config/sheets/select', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ spreadsheetId, tabName })
+    }).then(() => {
+      setSheetsSheetName(tabName);
+      alert("Sheet connected and initial sync triggered!");
+    });
+  };
+
   const checkReadiness = async () => {
-    // In a real implementation this hits health endpoints
-    setTimeout(() => setDbStatus('OK 🟢'), 500);
-    setTimeout(() => setOllamaStatus('OK 🟢'), 800);
-    setTimeout(() => setStep(2), 1500);
+    setDbStatus('Checking...');
+    setOllamaStatus('Checking...');
+    
+    try {
+      const [dbResp, ollamaResp] = await Promise.all([
+        fetch('/api/health/db').then(r => r.json()).catch(() => ({ status: 'error', message: 'Fetch failed' })),
+        fetch('/api/health/ollama').then(r => r.json()).catch(() => ({ status: 'error', message: 'Fetch failed' }))
+      ]);
+      
+      setDbStatus(dbResp.status === 'ok' ? 'OK 🟢' : `ERROR 🔴 — ${dbResp.message || 'Connection failed'}`);
+      setOllamaStatus(ollamaResp.status === 'ok' ? 'OK 🟢' : `ERROR 🔴 — ${ollamaResp.message || 'Connection failed'}`);
+      
+      if (dbResp.status === 'ok' && ollamaResp.status === 'ok') {
+        setTimeout(() => setStep(2), 800);
+      }
+    } catch (e) {
+      setDbStatus('ERROR 🔴 — Network error');
+      setOllamaStatus('ERROR 🔴 — Network error');
+    }
+  };
+
+  const [keywords, setKeywords] = useState('');
+
+  const saveKeywords = async () => {
+    const kwList = keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    for (const kw of kwList) {
+      await fetch('/api/keywords/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword: kw })
+      });
+    }
+    skipToDashboard();
   };
 
   const skipToDashboard = () => {
-    // Save to /api/config that onboarding is done
     fetch('/api/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -148,6 +214,31 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
                 )}
               </div>
 
+              {/* SHEETS */}
+              <div style={{marginBottom: '1rem'}}>
+                <span>[ Google Sheets ] </span>
+                <button onClick={() => setActiveIntegration(activeIntegration === 'sheets' ? null : 'sheets')} style={{background:'transparent', border:'1px solid var(--text-secondary)', color:'white', marginLeft:'1rem', padding:'0.2rem 0.5rem', cursor: 'pointer'}}>CONFIGURE</button>
+                {sheetsConnected && <span style={{color: '#4ade80', fontFamily: 'var(--font-mono)', marginLeft: '1rem'}}>CONNECTED 🟢</span>}
+                {activeIntegration === 'sheets' && (
+                  <div style={{marginTop: '1rem', paddingLeft: '1rem', borderLeft: '2px solid var(--accent-primary)'}}>
+                    {!sheetsConnected ? (
+                      <div>
+                        <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Ensure your Google OAuth app has the Google Sheets API and Google Picker API enabled.</p>
+                        <button onClick={startSheetsAuth} style={{padding: '0.3rem 0.8rem', background: 'var(--accent-primary)', color: 'var(--bg-base)', border: 'none', cursor: 'pointer'}}>CONNECT SPREADSHEETS</button>
+                      </div>
+                    ) : (
+                      <div>
+                        <p style={{fontSize: '0.8rem', color: '#4ade80'}}>OAuth Successful.</p>
+                        <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
+                          <button onClick={openGooglePicker} style={{padding: '0.3rem 0.8rem', background: 'var(--bg-surface)', color: 'white', border: '1px solid var(--border-color)', cursor: 'pointer'}}>SELECT SPREADSHEET</button>
+                          {sheetsSheetName && <span style={{fontSize: '0.8rem'}}>Selected: {sheetsSheetName}</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* WHATSAPP */}
               <div style={{marginBottom: '1rem'}}>
                 <span>[ WhatsApp Green API ] </span>
@@ -157,6 +248,26 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
                     <input type="text" placeholder="Instance ID" value={creds.greenApiInstanceId} onChange={e => handleCredChange('greenApiInstanceId', e.target.value)} style={{width: '90%', padding: '0.5rem', background: 'var(--bg-base)', border: '1px solid var(--border-color)', color: 'white', marginBottom: '0.5rem', fontFamily: 'var(--font-mono)'}} />
                     <input type="password" placeholder="API Token" value={creds.greenApiToken} onChange={e => handleCredChange('greenApiToken', e.target.value)} style={{width: '90%', padding: '0.5rem', background: 'var(--bg-base)', border: '1px solid var(--border-color)', color: 'white', marginBottom: '0.5rem', fontFamily: 'var(--font-mono)'}} />
                     <button onClick={saveCreds} style={{padding: '0.3rem 0.8rem', background: 'var(--accent-primary)', color: 'var(--bg-base)', border: 'none', cursor: 'pointer'}}>SAVE CREDENTIALS</button>
+                  </div>
+                )}
+              </div>
+
+              {/* LINKEDIN */}
+              <div style={{marginBottom: '1rem'}}>
+                <span>[ LinkedIn Bot ] </span>
+                <button onClick={() => setActiveIntegration(activeIntegration === 'linkedin' ? null : 'linkedin')} style={{background:'transparent', border:'1px solid var(--text-secondary)', color:'white', marginLeft:'1rem', padding:'0.2rem 0.5rem', cursor: 'pointer'}}>CONNECT</button>
+                {activeIntegration === 'linkedin' && (
+                  <div style={{marginTop: '1rem', paddingLeft: '1rem', borderLeft: '2px solid var(--accent-primary)'}}>
+                    <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Log into LinkedIn in your browser, open Developer Tools {'->'} Application {'->'} Cookies, and copy the value of the <b>li_at</b> cookie.</p>
+                    <input type="password" placeholder="li_at Cookie Value" id="li_at_input" style={{width: '90%', padding: '0.5rem', background: 'var(--bg-base)', border: '1px solid var(--border-color)', color: 'white', marginBottom: '0.5rem', fontFamily: 'var(--font-mono)'}} />
+                    <button onClick={() => {
+                      const val = (document.getElementById('li_at_input') as HTMLInputElement).value;
+                      fetch('/api/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ LinkedInSessionCookie: val })
+                      }).then(() => { alert('LinkedIn bot connected!'); setActiveIntegration(null); });
+                    }} style={{padding: '0.3rem 0.8rem', background: 'var(--accent-primary)', color: 'var(--bg-base)', border: 'none', cursor: 'pointer'}}>SAVE COOKIE</button>
                   </div>
                 )}
               </div>
@@ -187,11 +298,17 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
           <div>
             <h2 className="stat-label">Step 3: Define Keyword Rules</h2>
             <div className="stat-box" style={{marginTop: '1rem', marginBottom: '1rem'}}>
-              <p style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Enter keywords to flag escalations.</p>
-              <input type="text" placeholder="e.g. URGENT, INVOICE, HELP" style={{width: '100%', padding: '0.5rem', background: 'var(--bg-base)', border: '1px solid var(--border-color)', color: 'white', fontFamily: 'var(--font-mono)'}} />
+              <p style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Enter keywords to flag escalations. Comma-separated.</p>
+              <input 
+                type="text" 
+                placeholder="e.g. URGENT, INVOICE, HELP, CONTRACT, PRICING"
+                value={keywords}
+                onChange={e => setKeywords(e.target.value)}
+                style={{width: '100%', padding: '0.5rem', background: 'var(--bg-base)', border: '1px solid var(--border-color)', color: 'white', fontFamily: 'var(--font-mono)'}} 
+              />
             </div>
             <button 
-              onClick={skipToDashboard}
+              onClick={saveKeywords}
               style={{padding: '0.5rem 1rem', background: 'var(--accent-primary)', color: 'var(--bg-base)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontWeight: 'bold'}}>
               COMPLETE SETUP
             </button>

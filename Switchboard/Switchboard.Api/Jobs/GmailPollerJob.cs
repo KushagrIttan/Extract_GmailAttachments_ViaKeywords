@@ -70,7 +70,12 @@ public class GmailPollerJob
 
             // Fetch messages matching keywords
             var keywords = await _db.KeywordRules.Select(k => k.Keyword).ToListAsync();
-            var q = keywords.Any() ? string.Join(" OR ", keywords.Select(k => $"\"{k}\"")) : "is:unread";
+            var q = "is:unread";
+            if (keywords.Any())
+            {
+                var kwString = string.Join(" OR ", keywords.Select(k => $"\"{k}\""));
+                q = $"is:unread AND ({kwString})";
+            }
             var request = service.Users.Messages.List("me");
             request.Q = q;
             request.MaxResults = 10;
@@ -217,7 +222,6 @@ public class GmailPollerJob
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to poll Gmail API");
-            System.IO.File.WriteAllText("gmail_error.txt", ex.ToString());
         }
     }
 }

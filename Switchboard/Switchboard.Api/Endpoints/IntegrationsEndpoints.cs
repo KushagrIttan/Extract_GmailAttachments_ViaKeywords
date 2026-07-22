@@ -203,5 +203,154 @@ public static class IntegrationsEndpoints
 
             return Results.Content(html, "text/html");
         });
+
+        // ===== Google Sheets OAuth =====
+
+        // Sheets OAuth Start — reuses same Client ID/Secret as Gmail, different scopes
+        group.MapGet("/sheets/auth", async (HttpContext context, SwitchboardDbContext db) =>
+        {
+            var clientIdConfig = await db.Configs.FirstOrDefaultAsync(c => c.Key == "GMAIL_CLIENT_ID");
+            var clientId = clientIdConfig?.Value;
+            
+            var redirectUri = $"{context.Request.Scheme}://{context.Request.Host}/api/integrations/sheets/callback";
+            var scope = "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file";
+
+            if (string.IsNullOrEmpty(clientId))
+                return Results.BadRequest("Client ID is missing. Configure Gmail OAuth first.");
+
+            var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={clientId}&redirect_uri={redirectUri}&response_type=code&scope={Uri.EscapeDataString(scope)}&access_type=offline&prompt=consent";
+            return Results.Redirect(authUrl);
+        });
+
+        // Sheets OAuth Callback
+        group.MapGet("/sheets/callback", async (string code, HttpContext context, SwitchboardDbContext db) =>
+        {
+            var clientIdConfig = await db.Configs.FirstOrDefaultAsync(c => c.Key == "GMAIL_CLIENT_ID");
+            var clientSecretConfig = await db.Configs.FirstOrDefaultAsync(c => c.Key == "GMAIL_CLIENT_SECRET");
+            var clientId = clientIdConfig?.Value;
+            var clientSecret = clientSecretConfig?.Value;
+            var redirectUri = $"{context.Request.Scheme}://{context.Request.Host}/api/integrations/sheets/callback";
+
+            string statusMessage;
+            bool success;
+
+            if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
+            {
+                statusMessage = "Missing Client ID or Secret in database.";
+                success = false;
+            }
+            else
+            {
+                var client = new HttpClient();
+                var dict = new Dictionary<string, string>
+                {
+                    { "code", code },
+                    { "client_id", clientId },
+                    { "client_secret", clientSecret },
+                    { "redirect_uri", redirectUri },
+                    { "grant_type", "authorization_code" }
+                };
+
+                var req = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/token") { Content = new FormUrlEncodedContent(dict) };
+                var res = await client.SendAsync(req);
+                var content = await res.Content.ReadAsStringAsync();
+
+                if (res.IsSuccessStatusCode)
+                {
+                    var json = JsonSerializer.Deserialize<JsonElement>(content);
+                    var refreshToken = json.GetProperty("refresh_token").GetString() ?? "";
+
+                    var existingToken = await db.Configs.FirstOrDefaultAsync(c => c.Key == "SheetsRefreshToken");
+                    if (existingToken != null) existingToken.Value = refreshToken;
+                    else db.Configs.Add(new Config { Key = "SheetsRefreshToken", Value = refreshToken });
+                    await db.SaveChangesAsync();
+
+                    statusMessage = "Google Sheets connected successfully!";
+                    success = true;
+                }
+                else
+                {
+                    statusMessage = $"OAuth failed: {content}";
+                    success = false;
+                }
+            }
+
+            var html = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Switchboard — Sheets Auth</title>
+    <style>
+        body {{
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }}
+        .card {{
+            background: #16213e;
+            border: 1px solid {(success ? "#e2a832" : "#e74c3c")};
+            border-radius: 8px;
+            padding: 2rem 3rem;
+            text-align: center;
+            max-width: 400px;
+        }}
+        h2 {{ color: {(success ? "#e2a832" : "#e74c3c")}; margin-bottom: 1rem; }}
+        p {{ color: #b0b0b0; font-size: 0.9rem; }}
+        .countdown {{ color: #e2a832; font-size: 0.8rem; margin-top: 1rem; }}
+    </style>
+</head>
+<body>
+    <div class='card'>
+        <h2>{(success ? "✅ CONNECTED" : "❌ FAILED")}</h2>
+        <p>{statusMessage}</p>
+        <p class='countdown'>This window will close in <span id='sec'>3</span>s...</p>
+    </div>
+    <script>
+        let s = 3;
+        setInterval(() => {{
+            s--;
+            document.getElementById('sec').textContent = s;
+            if (s <= 0) window.close();
+        }}, 1000);
+    </script>
+</body>
+</html>";
+
+            return Results.Content(html, "text/html");
+        });
+
+        // POST /api/config/sheets/select — persist selected spreadsheet and tab
+        app.MapPost("/api/config/sheets/select", async (SheetsSelectRequest req, SwitchboardDbContext db) =>
+        {
+            async Task UpsertConfig(string key, string value)
+            {
+                var existing = await db.Configs.FirstOrDefaultAsync(c => c.Key == key);
+                if (existing != null) { existing.Value = value; existing.UpdatedAt = DateTime.UtcNow; }
+                else db.Configs.Add(new Config { Key = key, Value = value });
+            }
+
+            await UpsertConfig("SheetsSpreadsheetId", req.SpreadsheetId);
+            await UpsertConfig("SheetsTabName", req.TabName ?? "Sheet1");
+            await UpsertConfig("SheetsRange", $"{req.TabName ?? "Sheet1"}!A2:E");
+            await db.SaveChangesAsync();
+
+            // Trigger immediate sync
+            Hangfire.BackgroundJob.Enqueue<Switchboard.Api.Jobs.SheetsSyncJob>(j => j.ExecuteAsync());
+
+            return Results.Ok(new { success = true, message = "Sheet selected. Initial sync triggered." });
+        });
+
+        // GET /api/integrations/sheets/status
+        group.MapGet("/sheets/status", async (Switchboard.Api.Integrations.GoogleSheetsService sheetsService) =>
+        {
+            return Results.Ok(await sheetsService.GetConnectionStatusAsync());
+        });
     }
 }
+
+public record SheetsSelectRequest(string SpreadsheetId, string? TabName);

@@ -1,0 +1,6 @@
+Name,Email,Phone,Source,Status
+John Doe,john.doe@example.com,+15551234567,WhatsApp,New
+Jane Smith,jane.smith@example.com,+15559876543,Email,Contacted
+Bob Johnson,bob.j@example.com,+15553334444,LinkedIn,Converted
+Alice Williams,alice.w@example.com,+15557778888,WhatsApp,Dead
+Charlie Brown,charlie.b@example.com,+15551112222,Email,Replied
